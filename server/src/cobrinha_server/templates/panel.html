@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cobrinha Live Server</title>
+  <link rel="stylesheet" href="/static/css/panel.css?v=3">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <strong>COBRINHA LIVE SERVER</strong>
+        <span>Controle da live interativa em Godot</span>
+      </div>
+
+      <nav>
+        <button id="liveToggleTop" class="live-toggle" type="button">
+          Iniciar live
+        </button>
+        <button id="openScheduleModal" type="button">
+          Programar live
+        </button>
+        <button id="refresh" type="button">Atualizar</button>
+        <button id="openPreview" type="button">Abrir Preview</button>
+        <button id="openTerrainEditor" type="button">Editar terreno</button>
+        <button id="openTextureModal" type="button">Enviar textura</button>
+        <button id="buildGodotTop" type="button">Compilar release</button>
+        <button id="testEvent" type="button">Evento teste</button>
+      </nav>
+    </header>
+
+    <section class="card" style="margin-top:14px">
+      <h2>Controle principal da live</h2>
+      <p>
+        Prepare a sessao, conecte o monitor automaticamente, obtenha a
+        credencial quando configurada e prepare a saida antes de marcar
+        a transmissao como ativa.
+      </p>
+
+      <div class="row">
+        <button id="sessionPlan" type="button">
+          Verificar sequência
+        </button>
+
+        <button id="sessionStart" class="live-toggle" type="button">
+          Iniciar live
+        </button>
+
+        <button id="sessionStop" type="button">
+          Parar live
+        </button>
+      </div>
+
+      <pre id="sessionResult">Controlador ainda não consultado.</pre>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <h2>Build GPU / Release</h2>
+      <p>
+        Exporta a Cobrinha para um executável Linux release e configura a
+        próxima live para abrir esse binário com renderização via GPU.
+      </p>
+
+      <div class="row">
+        <button id="buildGodot" type="button">
+          Compilar nova versão
+        </button>
+
+        <label class="checkline">
+          <input
+            id="buildUseForLive"
+            type="checkbox"
+            checked
+          >
+          Usar na próxima live
+        </label>
+      </div>
+
+      <pre id="buildResult">Build ainda não consultado.</pre>
+    </section>
+
+    <section class="card maintenance-card" style="margin-top:14px">
+      <h2>Limpeza do sistema</h2>
+      <p>
+        Remove todo o histórico temporário de falas, fotos em cache,
+        testes de voz, logs das lives e intermediários de processamento. Músicas, vozes,
+        texturas, configurações e arquivos do jogo são preservados.
+      </p>
+
+      <div class="row">
+        <button id="cleanupAnalyze" type="button">
+          Analisar arquivos
+        </button>
+
+        <button id="cleanupRun" class="cleanup-button" type="button">
+          Limpar temporários agora
+        </button>
+      </div>
+
+      <pre id="cleanupResult">Limpeza ainda não consultada.</pre>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <h2>Inteligência artificial</h2>
+      <div class="control-strip">
+        <label for="openaiApiKey">Chave da API OpenAI</label>
+        <input
+          id="openaiApiKey"
+          type="password"
+          autocomplete="new-password"
+          spellcheck="false"
+          placeholder="Cole uma nova chave para salvar"
+        >
+
+        <label for="openaiModel">Modelo</label>
+        <input
+          id="openaiModel"
+          type="text"
+          value="gpt-4.1-mini"
+          autocomplete="off"
+          spellcheck="false"
+        >
+
+        <label class="checkline">
+          <input id="openaiEnabled" type="checkbox">
+          Ativar respostas por IA
+        </label>
+
+        <div class="row">
+          <button id="openaiSave" type="button">Salvar configuração</button>
+          <button id="openaiRemove" type="button">Remover chave</button>
+        </div>
+
+        <small id="openaiStatus">Configuração ainda não consultada.</small>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h1>Estado do sistema</h1>
+
+        <div class="cobrinha-status-grid">
+          <div class="cobrinha-status-card">
+            <strong>Servidor</strong>
+            <div id="server" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Godot oficial</strong>
+            <div id="godot" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Preview</strong>
+            <div id="preview" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Editor terreno</strong>
+            <div id="terrainEditor" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Vocal</strong>
+            <div id="vocal" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Transmissão</strong>
+            <div id="transmission" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Saúde live</strong>
+            <div id="liveHealth" class="value">...</div>
+            <small id="liveHealthDetail">Aguardando diagnóstico.</small>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>XTTS</strong>
+            <div id="voice" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Músicas</strong>
+            <div id="music" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Monitor TikTok</strong>
+            <div id="monitor" class="value">...</div>
+          </div>
+
+          <div class="cobrinha-status-card">
+            <strong>Eventos sociais</strong>
+            <div id="socialEvents" class="value">...</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Música de fundo</h2>
+        <p>
+          Volume aplicado em tempo real no Godot oficial e no preview.
+          O valor fica persistido entre reinícios.
+        </p>
+
+        <div class="control-strip">
+          <div class="mini-control">
+            <label for="musicVolume">Volume</label>
+            <input
+              id="musicVolume"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="16"
+            >
+            <output id="musicVolumeValue">16%</output>
+          </div>
+
+          <label class="checkline">
+            <input
+              id="musicEnabled"
+              type="checkbox"
+              checked
+            >
+            Música ligada
+          </label>
+
+          <small id="musicRuntimeStatus">
+            Aguardando estado da música.
+          </small>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Cantoria da serpente</h2>
+        <p>
+          Separe a voz e o instrumental antes da live. O presente
+          mapeado chama a música; o vocal move a boca e o instrumental
+          toca junto.
+        </p>
+
+        <div class="control-strip">
+          <label for="songSource">Música de entrada</label>
+          <select id="songSource">
+            <option value="">Nenhuma música encontrada</option>
+          </select>
+
+          <div class="row">
+            <button id="songRefresh" type="button">
+              Atualizar músicas
+            </button>
+
+            <button id="songProcess" type="button">
+              Processar com Demucs
+            </button>
+          </div>
+
+          <label for="songSelect">Música processada</label>
+          <select id="songSelect">
+            <option value="">Nenhuma música processada</option>
+          </select>
+
+          <div class="row">
+            <button id="songPlay" type="button">
+              Tocar teste
+            </button>
+
+            <button id="songStop" type="button">
+              Parar cantoria
+            </button>
+          </div>
+
+          <small id="songRuntimeStatus">
+            Aguardando estado da cantoria.
+          </small>
+        </div>
+
+        <div class="control-strip">
+          <label for="songGiftName">Presente que chama a música</label>
+          <input
+            id="songGiftName"
+            placeholder="Ex: Rosa, GG, Coração..."
+          >
+
+          <div class="row">
+            <button id="songMapGift" type="button">
+              Adicionar música
+            </button>
+
+            <button id="songRemoveGiftSong" type="button">
+              Remover música
+            </button>
+
+            <button id="songRemoveGift" type="button">
+              Remover presente
+            </button>
+          </div>
+
+          <small id="songGiftMapStatus">
+            Nenhum presente vinculado.
+          </small>
+        </div>
+
+        <pre id="songResult">Coloque músicas em assets/singing/originals.</pre>
+      </article>
+
+      <article class="card">
+        <h2>Monitor TikTok</h2>
+        <p>
+          O monitor pode ser controlado manualmente aqui e tambem sera
+          conectado automaticamente depois do inicio da sessao.
+        </p>
+
+        <div class="cobrinha-control-block">
+          <label for="monitorUsername">Usuário TikTok</label>
+          <input
+            id="monitorUsername"
+            maxlength="96"
+            autocomplete="off"
+            placeholder="@usuario_da_live"
+          >
+
+          <div class="row">
+            <button id="monitorStart" type="button">
+              Conectar monitor
+            </button>
+
+            <button id="monitorStop" type="button">
+              Parar monitor
+            </button>
+          </div>
+
+          <pre id="monitorResult">Monitor ainda não consultado.</pre>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Fala manual da live</h2>
+
+        <label for="speechText">Texto</label>
+        <textarea
+          id="speechText"
+          maxlength="3000"
+          spellcheck="true"
+          rows="7"
+          placeholder="Digite aqui o texto que a Cobrinha deve falar."
+        >Olá. A maçã está ótima. Você também está prestando atenção?</textarea>
+
+        <div class="row">
+          <button id="speechPreview" type="button">
+            Ver texto do XTTS
+          </button>
+
+          <button id="speechSend" type="button">
+            Inserir fala na live
+          </button>
+        </div>
+
+        <label>Texto preparado para XTTS</label>
+        <div id="preparedText" class="cobrinha-status-card">
+          Nenhuma prévia ainda.
+        </div>
+
+        <pre id="speechResult">Aguardando teste...</pre>
+      </article>
+
+      <article class="card">
+        <h2>Estado detalhado</h2>
+        <pre id="state" class="cobrinha-state">Carregando...</pre>
+      </article>
+    </section>
+  </main>
+
+  <dialog id="textureModal" class="modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-head">
+        <div>
+          <strong>Enviar textura</strong>
+          <span>Adiciona texturas externas para o sorteio automatico do terreno.</span>
+        </div>
+        <button id="closeTextureModal" type="button">Fechar</button>
+      </header>
+
+      <section class="modal-grid">
+        <div>
+          <label>Tipo</label>
+          <select id="textureType">
+            <option value="piso">Piso da arena</option>
+            <option value="parede">Parede lateral</option>
+            <option value="grama">Grama externa</option>
+            <option value="elevacao">Elevacao/relevo</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Nome</label>
+          <input
+            id="textureLabel"
+            type="text"
+            placeholder="Ex: pedra clara"
+          >
+        </div>
+
+        <div>
+          <label>Arquivo</label>
+          <input
+            id="textureFile"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+          >
+        </div>
+      </section>
+
+      <p class="modal-note">
+        O servidor salva em private/textures, converte para PNG e atualiza private/terrain_textures.json.
+      </p>
+
+      <footer class="modal-actions">
+        <button id="uploadTexture" type="button">Enviar textura</button>
+        <button id="refreshTextures" type="button">Atualizar lista</button>
+      </footer>
+
+      <pre id="textureStatus">Carregando...</pre>
+    </form>
+  </dialog>
+
+  <dialog id="scheduleModal" class="modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-head">
+        <div>
+          <strong>Programar live</strong>
+          <span>configuração usada pelo botão Iniciar live</span>
+        </div>
+        <button id="closeScheduleModal" type="button">Fechar</button>
+      </header>
+
+      <section class="modal-grid">
+        <div>
+          <label>Usuário da live</label>
+          <input id="scheduleUsername" placeholder="usuario sem @">
+        </div>
+        <div>
+          <label>Servidor do monitor</label>
+          <input id="scheduleMonitorServer" placeholder="http://127.0.0.1:2619">
+        </div>
+        <div>
+          <label>Modo</label>
+          <select id="scheduleMode">
+            <option value="normal">Normal</option>
+            <option value="battle">Batalha HDMI</option>
+          </select>
+        </div>
+        <div>
+          <label>Execução</label>
+          <select id="scheduleGameRuntime">
+            <option value="build" selected>Build release GPU</option>
+            <option value="editor">Godot editor/projeto</option>
+          </select>
+        </div>
+        <div>
+          <label>Título</label>
+          <input id="scheduleTitle" placeholder="Cobrinha Live">
+        </div>
+        <div>
+          <label>Categoria</label>
+          <input id="scheduleGame" placeholder="Others">
+        </div>
+        <div>
+          <label>Audiência</label>
+          <select id="scheduleAudience">
+            <option value="0">Padrão</option>
+            <option value="1">Restrita</option>
+          </select>
+        </div>
+        <div>
+          <label>Bitrate</label>
+          <input
+            id="scheduleBitrate"
+            type="number"
+            min="500"
+            max="12000"
+            step="100"
+          >
+        </div>
+        <div>
+          <label>Encoder</label>
+          <select id="scheduleEncoder">
+            <option value="nvenc" selected>NVENC</option>
+            <option value="auto">Auto</option>
+            <option value="x264">x264</option>
+          </select>
+        </div>
+        <div>
+          <label>RTMP sink</label>
+          <select id="scheduleSink">
+            <option value="auto">Auto</option>
+            <option value="rtmp2sink" selected>GStreamer direto rtmp2</option>
+            <option value="rtmpsink">rtmpsink</option>
+          </select>
+        </div>
+        <div>
+          <label>Entrar mínimo (min)</label>
+          <input id="scheduleStartMin" type="number" min="1">
+        </div>
+        <div>
+          <label>Entrar máximo (min)</label>
+          <input id="scheduleStartMax" type="number" min="1">
+        </div>
+        <div>
+          <label>Finalizar mínimo (min)</label>
+          <input id="scheduleStopMin" type="number" min="1">
+        </div>
+        <div>
+          <label>Finalizar máximo (min)</label>
+          <input id="scheduleStopMax" type="number" min="1">
+        </div>
+      </section>
+
+      <label class="checkline">
+        <input id="scheduleAutoEnabled" type="checkbox">
+        Ativar entrada e saída automática
+      </label>
+      <p class="modal-note">Quando ativado, o sistema agenda iniciar se estiver parado e agenda finalizar se estiver rodando, usando credencial Streamlabs nova.</p>
+
+      <footer class="modal-actions">
+        <button id="saveScheduleConfig" type="button">Salvar programação</button>
+        <button id="saveScheduleAndStart" type="button">Salvar e iniciar agora</button>
+      </footer>
+
+      <pre id="scheduleStatus">Carregando...</pre>
+    </form>
+  </dialog>
+
+  <script src="/static/js/panel.js?v=13"></script>
+</body>
+</html>

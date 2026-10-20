@@ -1,0 +1,90 @@
+# Snake Reyers
+
+Olá! Meu nome é **Thiago Reyes** e este é o **Snake Reyers**, um sistema gratuito para criar lives interativas de cobrinha no TikTok.
+
+O projeto combina um jogo 3D, personagens, comentários e presentes da live, respostas com inteligência artificial, geração local de voz e um painel de controle no navegador. Minha intenção é permitir que outras pessoas também criem sua própria live interativa sem precisar montar toda a estrutura do zero.
+
+> O jogo é distribuído compilado. O código do servidor, do monitor, do painel e dos instaladores está disponível neste repositório, mas o projeto-fonte do Godot não faz parte da distribuição.
+
+## O que está incluído
+
+- jogo compilado para Windows e Linux;
+- painel local para configurar e acompanhar a live;
+- monitor de comentários e presentes do TikTok;
+- respostas usando a chave da API OpenAI do próprio usuário;
+- vozes locais com Coqui XTTS;
+- músicas, vozes e cantorias instaladas pelos pacotes de áudio;
+- Tor local para o monitor do TikTok no Windows;
+- atualizador com verificação SHA-256;
+- editor de terreno e recursos já incluídos no jogo compilado.
+
+## Instalação rápida no Windows
+
+1. Abra a página de [Releases](https://github.com/golgol2/Snake-Reyers/releases).
+2. Baixe `SnakeReyers-0.1.0-Windows-x64.zip`.
+3. Extraia o ZIP para uma pasta comum, como `C:\SnakeReyers`.
+4. Abra o PowerShell dentro da pasta extraída.
+5. Execute:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\installer\windows\install.ps1
+.\launcher\start_windows.ps1
+```
+
+Durante a instalação, confirme a licença do modelo Coqui XTTS. O instalador baixa Python, Node.js, Tor, o modelo de voz e os pacotes de áudio verificados. A primeira instalação é demorada e exige bastante espaço livre.
+
+Quando o painel abrir em `http://127.0.0.1:9393`:
+
+1. informe o seu usuário do TikTok, sem `@`;
+2. salve sua própria chave da API OpenAI na área de IA;
+3. conecte o monitor da live;
+4. abra o jogo pelo painel;
+5. no TikTok LIVE Studio, adicione a janela **Snake Reyers** como captura de jogo ou de janela;
+6. confirme imagem e som antes de iniciar a transmissão.
+
+O Windows reproduz o áudio diretamente pelo jogo. Não é necessário usar o pipeline GStreamer nessa versão.
+
+## Instalação rápida no Linux
+
+Requisitos: Python 3, Node.js 22 ou superior, npm, Tor, GStreamer e os plugins utilizados pela transmissão.
+
+```bash
+tar -xzf SnakeReyers-0.1.0-Linux-x64.tar.gz
+cd SnakeReyers
+chmod +x installer/linux/install.sh launcher/start_linux.sh
+./installer/linux/install.sh
+./launcher/start_linux.sh
+```
+
+O painel será aberto em `http://127.0.0.1:9393`.
+
+O tutorial completo, incluindo solução de problemas, está em [docs/INSTALACAO.md](docs/INSTALACAO.md).
+
+## Antes de instalar
+
+- Use Windows 10/11 ou uma distribuição Linux 64 bits.
+- Reserve pelo menos 20 GB livres para dependências, modelo de voz e áudios.
+- Tenha acesso a lives no TikTok e, no Windows, o TikTok LIVE Studio instalado.
+- Crie sua própria chave da API OpenAI. Nenhuma chave do criador acompanha o projeto.
+- Leia e aceite a licença do Coqui XTTS somente se concordar com seus termos.
+
+## Privacidade e segurança
+
+Chaves, cookies, sessões, credenciais de transmissão e configurações privadas ficam somente no computador do usuário, dentro de `server/private`, e são ignorados pelo Git.
+
+O painel e os serviços locais escutam em `127.0.0.1`. Nunca publique a pasta `server/private` nem compartilhe sua chave da API OpenAI ou sua chave de transmissão.
+
+## Comunidade
+
+Entre no grupo para trocar ideias, relatar problemas e acompanhar o desenvolvimento:
+
+[Participar da comunidade Snake Reyers no WhatsApp](https://chat.whatsapp.com/Ey2Z4l9JXpc8ueVBmLh50g)
+
+## Atualizações
+
+As novas versões serão publicadas nas [Releases](https://github.com/golgol2/Snake-Reyers/releases). Cada pacote possui um hash SHA-256 para conferência de integridade.
+
+## Aviso
+
+Snake Reyers é um projeto independente e não possui vínculo oficial com TikTok, OpenAI, Coqui, Godot ou Streamlabs. O uso das plataformas e APIs depende dos termos e das permissões de cada serviço.

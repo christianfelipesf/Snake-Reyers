@@ -1,0 +1,21 @@
+{
+  "name": "advttl-server-2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1",
+    "socks-proxy-agent": "^8.0.5",
+    "tiktok-live-connector": "^2.5.0"
+  }
+}

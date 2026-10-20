@@ -1,0 +1,165 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+
+_PACKAGE_PROJECT_DIR = Path(__file__).resolve().parents[3]
+
+PROJECT_DIR = Path(
+    os.getenv(
+        "COBRINHA_SERVER_DIR",
+        str(_PACKAGE_PROJECT_DIR),
+    )
+).resolve()
+
+RUNS_DIR = PROJECT_DIR / "runs"
+LOGS_DIR = RUNS_DIR / "logs"
+PRIVATE_DIR = PROJECT_DIR / "private"
+ASSETS_DIR = PROJECT_DIR / "assets"
+VOICE_DIR = ASSETS_DIR / "voice"
+BUILDS_DIR = PROJECT_DIR / "builds"
+
+TIKTOK_MONITOR_DIR = (
+    PROJECT_DIR
+    / "external"
+    / "tiktok-live-monitoring-server"
+)
+TIKTOK_MONITOR_ENTRY = (
+    TIKTOK_MONITOR_DIR
+    / "server.js"
+)
+TIKTOK_MONITOR_PACKAGE = (
+    TIKTOK_MONITOR_DIR
+    / "package.json"
+)
+TIKTOK_MONITOR_PID_FILE = (
+    RUNS_DIR
+    / "tiktok-live-monitor.pid"
+)
+TIKTOK_MONITOR_NETWORK_FILE = (
+    RUNS_DIR
+    / "monitor_network.json"
+)
+TIKTOK_MONITOR_LOG_FILE = (
+    LOGS_DIR
+    / "tiktok-live-monitor.log"
+)
+TIKTOK_MONITOR_HOST = os.getenv(
+    "COBRINHA_TIKTOK_MONITOR_HOST",
+    "127.0.0.1",
+)
+TIKTOK_MONITOR_PORT = int(
+    os.getenv(
+        "COBRINHA_TIKTOK_MONITOR_PORT",
+        "2619",
+    )
+)
+TOR_SOCKS_HOST = os.getenv(
+    "COBRINHA_TOR_SOCKS_HOST",
+    "127.0.0.1",
+)
+TOR_SOCKS_PORT = int(
+    os.getenv(
+        "COBRINHA_TOR_SOCKS_PORT",
+        "9050",
+    )
+)
+SOCIAL_TEXT_AI_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "social_text_ai.json"
+)
+BLACKLIST_FILE = (
+    PRIVATE_DIR
+    / "chat_blacklist_terms.txt"
+)
+GODOT_TERRAIN_EDITOR_FILE = (
+    PRIVATE_DIR
+    / "cobrinha_terrain_editor.json"
+)
+TEXTURE_LIBRARY_DIR = (
+    PRIVATE_DIR
+    / "textures"
+)
+TEXTURE_MANIFEST_FILE = (
+    PRIVATE_DIR
+    / "terrain_textures.json"
+)
+
+STREAMLABS_TIKTOK_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "streamlabs_tiktok.json"
+)
+SESSION_CONTROL_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "live_control.json"
+)
+SESSION_RUNTIME_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "live_runtime.json"
+)
+
+OUTPUT_PRIVATE_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "output.json"
+)
+OUTPUT_PROVIDER_CONFIG_FILE = (
+    PRIVATE_DIR
+    / "output_provider.json"
+)
+OUTPUT_RUNTIME_FILE = (
+    RUNS_DIR
+    / "output_status.json"
+)
+OUTPUT_METRICS_FILE = (
+    RUNS_DIR
+    / "output_metrics.json"
+)
+OUTPUT_LOG_FILE = (
+    LOGS_DIR
+    / "output.log"
+)
+
+OUTPUT_WIDTH = 720
+OUTPUT_HEIGHT = 1280
+OUTPUT_FPS = 30
+OUTPUT_AUDIO_RATE = 48000
+OUTPUT_AUDIO_CHANNELS = 2
+OUTPUT_AUDIO_BITRATE = 160000
+
+DEFAULT_VOICE_PATH = Path(
+    os.getenv(
+        "COBRINHA_VOICE_PATH",
+        str(VOICE_DIR / "default.wav"),
+    )
+).expanduser()
+
+DEFAULT_HOST = os.getenv(
+    "COBRINHA_SERVER_HOST",
+    "127.0.0.1",
+)
+DEFAULT_PORT = int(
+    os.getenv(
+        "COBRINHA_SERVER_PORT",
+        "9393",
+    )
+)
+
+
+def ensure_runtime_dirs() -> None:
+    for path in (
+        RUNS_DIR,
+        LOGS_DIR,
+        PRIVATE_DIR,
+        ASSETS_DIR,
+        VOICE_DIR,
+        BUILDS_DIR,
+        TEXTURE_LIBRARY_DIR,
+        ASSETS_DIR / "music" / "background",
+        ASSETS_DIR / "singing" / "originals",
+        ASSETS_DIR / "singing" / "processed",
+    ):
+        path.mkdir(
+            parents=True,
+            exist_ok=True,
+        )

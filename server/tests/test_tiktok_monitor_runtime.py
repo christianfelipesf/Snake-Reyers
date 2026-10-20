@@ -1,0 +1,49 @@
+from subprocess import CompletedProcess
+
+from cobrinha_server.services import tiktok_monitor_runtime
+from cobrinha_server.services import tiktok_monitor
+
+
+def test_windows_pid_check_uses_tasklist_without_signaling_process(monkeypatch):
+    calls = []
+
+    def fake_run(arguments, **kwargs):
+        calls.append((arguments, kwargs))
+        return CompletedProcess(
+            arguments,
+            0,
+            stdout='"node.exe","4321","Console","1","50,000 K"\n',
+            stderr="",
+        )
+
+    monkeypatch.setattr(tiktok_monitor_runtime.os, "name", "nt")
+    monkeypatch.setattr(tiktok_monitor_runtime.subprocess, "run", fake_run)
+
+    assert tiktok_monitor_runtime._pid_exists(4321) is True
+    assert calls[0][0][:3] == ["tasklist", "/FI", "PID eq 4321"]
+    assert "creationflags" in calls[0][1]
+
+
+def test_windows_pid_check_rejects_missing_process(monkeypatch):
+    def fake_run(arguments, **kwargs):
+        return CompletedProcess(
+            arguments,
+            0,
+            stdout="INFO: No tasks are running which match the specified criteria.\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(tiktok_monitor_runtime.os, "name", "nt")
+    monkeypatch.setattr(tiktok_monitor_runtime.subprocess, "run", fake_run)
+
+    assert tiktok_monitor_runtime._pid_exists(4321) is False
+
+
+def test_room_id_error_names_the_live_user():
+    message = tiktok_monitor._friendly_connection_error(
+        "Failed to retrieve Room ID from all sources.",
+        username="criador_exemplo",
+    )
+
+    assert "@criador_exemplo" in message
+    assert "Live nao encontrada" in message

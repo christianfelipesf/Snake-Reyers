@@ -1,0 +1,50 @@
+# Dados locais e segredos
+.env
+.env.*
+!.env.example
+server/private/
+server/runs/
+server/config/*.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python e Node
+server/.venv/
+server/runtime/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+server/external/**/node_modules/
+
+# Conteudo instalado separadamente
+server/assets/music/background/*
+server/assets/singing/*
+server/assets/songs/*
+server/assets/voice/*
+server/assets/audio-manifest.json
+server/assets/.audio-package-version
+!server/assets/**/README.md
+!server/assets/**/.gitkeep
+
+# Binarios publicados pelas GitHub Releases
+game/windows/*.exe
+game/windows/*.zip
+game/linux/*.x86_64
+game/linux/*.tar.gz
+
+# Projeto Godot nunca deve entrar neste repositorio
+project.godot
+export_presets.cfg
+*.tscn
+*.godot
+.godot/
+private-build/
+
+# Temporarios
+updates/
+*.log
+*.tmp
+*.bak*
+*.snake_reyers_backup*
