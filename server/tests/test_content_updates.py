@@ -10,11 +10,11 @@ import pytest
 from cobrinha_server.services import content_updates
 
 
-def _catalog(tmp_path: Path, *, target: str = "singing/processed/FANCLUB/test-song") -> Path:
-    package = tmp_path / "test-song.zip"
+def _catalog(tmp_path: Path, *, target: str = "music/background/test-track") -> Path:
+    package = tmp_path / "test-track.zip"
     with zipfile.ZipFile(package, "w") as bundle:
-        bundle.writestr("manifest.json", '{"id":"test-song"}\n')
-        bundle.writestr("vocals.wav", b"voice")
+        bundle.writestr("manifest.json", '{"id":"test-track"}\n')
+        bundle.writestr("track.mp3", b"music")
     digest = hashlib.sha256(package.read_bytes()).hexdigest()
     manifest = tmp_path / "content-manifest.json"
     manifest.write_text(
@@ -24,16 +24,14 @@ def _catalog(tmp_path: Path, *, target: str = "singing/processed/FANCLUB/test-so
                 "revision": 2,
                 "items": [
                     {
-                        "id": "test-song",
-                        "title": "Musica de teste",
-                        "type": "gift_song",
+                        "id": "test-track",
+                        "title": "Musica de fundo de teste",
+                        "type": "background_music",
                         "version": "1",
                         "url": package.as_uri(),
                         "sha256": digest,
                         "bytes": package.stat().st_size,
                         "target": target,
-                        "song_id": "test-song",
-                        "gift_names": ["Test Gift"],
                     }
                 ],
             }
@@ -70,12 +68,6 @@ def _configure(tmp_path: Path, monkeypatch, manifest: Path) -> Path:
 def test_incremental_content_download_and_install(tmp_path, monkeypatch):
     manifest = _catalog(tmp_path)
     assets = _configure(tmp_path, monkeypatch, manifest)
-    registered: list[str] = []
-    monkeypatch.setattr(
-        content_updates,
-        "_register_gift_song",
-        lambda item: registered.append(item["song_id"]),
-    )
 
     checked = content_updates.synchronize(install=False)
 
@@ -85,11 +77,10 @@ def test_incremental_content_download_and_install(tmp_path, monkeypatch):
 
     installed = content_updates.synchronize(install=True)
 
-    target = assets / "singing" / "processed" / "FANCLUB" / "test-song"
-    assert installed["installed_now"] == ["test-song"]
+    target = assets / "music" / "background" / "test-track"
+    assert installed["installed_now"] == ["test-track"]
     assert installed["busy"] is False
-    assert (target / "vocals.wav").read_bytes() == b"voice"
-    assert registered == ["test-song"]
+    assert (target / "track.mp3").read_bytes() == b"music"
     assert content_updates.synchronize(install=False)["available_count"] == 0
 
 
@@ -103,7 +94,7 @@ def test_content_install_is_blocked_during_live(tmp_path, monkeypatch):
 
 
 def test_content_target_cannot_leave_allowed_directory(tmp_path, monkeypatch):
-    manifest = _catalog(tmp_path, target="singing/other-place")
+    manifest = _catalog(tmp_path, target="music/other-place")
     _configure(tmp_path, monkeypatch, manifest)
 
     with pytest.raises(content_updates.ContentUpdateError):

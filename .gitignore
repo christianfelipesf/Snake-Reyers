@@ -5,7 +5,6 @@
 server/private/
 server/runs/
 server/config/*.json
-!server/config/song_gift_map.json
 *.key
 *.pem
 *.p12
@@ -21,8 +20,6 @@ server/external/**/node_modules/
 
 # Conteudo instalado separadamente
 server/assets/music/background/*
-server/assets/singing/*
-server/assets/songs/*
 server/assets/voice/*
 server/assets/audio-manifest.json
 server/assets/.audio-package-version

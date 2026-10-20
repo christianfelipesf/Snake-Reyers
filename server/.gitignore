@@ -8,8 +8,6 @@ private/*
 !private/.gitkeep
 assets/music/background/*
 !assets/music/background/.gitkeep
-assets/songs/*
-!assets/songs/.gitkeep
 *.log
 *.wav
 *.mp3

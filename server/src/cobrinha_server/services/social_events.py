@@ -77,7 +77,6 @@ def spectator_user_message(
     *,
     avatar_path: str = "",
     source: str = "social",
-    preview: bool = False,
 ) -> dict[str, Any]:
     user = normalize_social_user(payload)
 
@@ -90,7 +89,6 @@ def spectator_user_message(
                 avatar_path or ""
             ).strip(),
             "metadata": {
-                "preview": bool(preview),
                 "source": source,
             },
         },

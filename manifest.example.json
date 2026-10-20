@@ -1,19 +1,19 @@
 {
-  "version": "0.1.1",
-  "published_at": "2026-10-19T00:00:00Z",
+  "version": "0.2.0",
+  "published_at": "2026-10-20T00:00:00Z",
   "minimum_launcher_version": "0.1.0",
   "packages": {
     "windows-x86_64": {
-      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.1/SnakeReyers-0.1.1-Windows-x64.zip",
+      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.2.0/SnakeReyers-0.2.0-Windows-x64.zip",
       "sha256": "PREENCHER_NA_RELEASE"
     },
     "linux-x86_64": {
-      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.1/SnakeReyers-0.1.1-Linux-x64.tar.gz",
+      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.2.0/SnakeReyers-0.2.0-Linux-x64.tar.gz",
       "sha256": "PREENCHER_NA_RELEASE"
     }
   },
   "audio": {
     "manifest": "server/assets/audio-manifest.json",
-    "description": "Pacotes compartilhados de vozes, musicas de fundo e cantorias instalados automaticamente."
+    "description": "Pacotes compartilhados de vozes Piper e musicas de fundo instalados automaticamente."
   }
 }

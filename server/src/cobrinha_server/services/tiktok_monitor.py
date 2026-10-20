@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import socket
 import threading
 import time
 from typing import Any
@@ -179,11 +178,12 @@ def _friendly_connection_error(
     if (
         "rate_limit_" in normalized
         or "rate limited" in normalized
-        or "limite de conexoes tiktok/euler"
+        or "limite de conexoes"
         in normalized
+        or "status code 429" in normalized
     ):
         return (
-            "Limite horario de conexoes TikTok/Euler atingido. "
+            "Limite temporario de conexoes do TikTok atingido. "
             "O monitor pausou novas tentativas automaticamente; "
             "nao reinicie nem clique repetidamente em conectar."
         )
@@ -237,27 +237,6 @@ def _mark_ingested_event(
     )
 
 
-def tor_socks_listening(
-    host: str = "127.0.0.1",
-    port: int = 9050,
-    timeout: float = 0.35,
-) -> bool:
-    try:
-        with socket.create_connection(
-            (
-                host,
-                int(port),
-            ),
-            timeout=max(
-                0.05,
-                float(timeout),
-            ),
-        ):
-            return True
-    except OSError:
-        return False
-
-
 def status() -> dict[str, Any]:
     with _LOCK:
         state = dict(_STATE)
@@ -287,37 +266,23 @@ def status() -> dict[str, Any]:
     )
 
     state["network"] = {
-        "required": "tor",
-        "socks_host":
-            str(
-                runtime
-                .get("tor", {})
-                .get(
-                    "host",
-                    "127.0.0.1",
-                )
-            ),
-        "socks_port":
-            int(
-                runtime
-                .get("tor", {})
-                .get(
-                    "port",
-                    9050,
-                )
-            ),
-        "socks_listening":
-            bool(
-                runtime
-                .get("tor", {})
-                .get(
-                    "socks_listening"
-                )
-            ),
+        "mode": (
+            "proxy"
+            if os.getenv(
+                "SNAKE_REYERS_MONITOR_PROXY",
+                "",
+            ).strip()
+            else "direct"
+        ),
+        "proxy_configured": bool(
+            os.getenv(
+                "SNAKE_REYERS_MONITOR_PROXY",
+                "",
+            ).strip()
+        ),
     }
 
-    # Importante: este modulo nao inicia Tor,
-    # nao inicia transmissao e nao inicia sozinho.
+    # O painel controla a sessao; o monitor nao inicia sozinho.
     state["auto_start"] = False
 
     return state
@@ -440,8 +405,8 @@ def start_monitor(
             username=clean_username,
             server_url=clean_server_url,
             last_error=(
-                "Node ou torsocks nao esta "
-                "disponivel para o monitor."
+                "Node nao esta disponivel "
+                "para o monitor."
             ),
         )
         return status()
@@ -458,22 +423,6 @@ def start_monitor(
             last_error=(
                 "Dependencias Node do monitor "
                 "TikTok ainda nao estao instaladas."
-            ),
-        )
-        return status()
-
-    if not runtime.get(
-        "tor_ready"
-    ):
-        _update(
-            running=False,
-            connected=False,
-            listening=False,
-            username=clean_username,
-            server_url=clean_server_url,
-            last_error=(
-                "Tor SOCKS nao esta disponivel. "
-                "Rede direta continua bloqueada."
             ),
         )
         return status()
@@ -500,22 +449,6 @@ def start_monitor(
                 "Servidor Node local do monitor "
                 "ainda nao esta ativo. "
                 "Nenhuma conexao TikTok foi aberta."
-            ),
-        )
-        return status()
-
-    if not tor_socks_listening():
-        _update(
-            running=False,
-            connected=False,
-            listening=False,
-            username=clean_username,
-            server_url=
-                clean_server_url,
-            last_error=(
-                "Tor SOCKS 127.0.0.1:9050 "
-                "nao esta disponivel. "
-                "O monitor nao foi iniciado."
             ),
         )
         return status()
@@ -677,21 +610,6 @@ def _loop(
                 ),
             )
             return
-
-        if not tor_socks_listening():
-            _update(
-                running=True,
-                connected=False,
-                listening=False,
-                last_error=(
-                    "Tor SOCKS indisponivel."
-                ),
-            )
-
-            if _STOP.wait(8.0):
-                break
-
-            continue
 
         client = (
             socketio_client.Client(
@@ -858,8 +776,9 @@ def _loop(
                     or now < retry_at
                 ):
                     # O Node mantem uma unica tentativa agendada para o
-                    # instante indicado pela Euler. Reiniciar o Socket.IO
-                    # aqui criaria outro wrapper e consumiria mais cota.
+                    # instante informado pelo servico de conexao. Reiniciar
+                    # o Socket.IO aqui criaria outro wrapper e consumiria
+                    # mais cota.
                     not_listening_since = now
                     continue
 
@@ -1839,7 +1758,6 @@ def _register_handlers(
                 {
                     "username":
                         username,
-                    "proxy": True,
                 }
             ),
         )

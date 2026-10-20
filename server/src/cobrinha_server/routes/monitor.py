@@ -16,7 +16,6 @@ from cobrinha_server.core.settings import (
 )
 from cobrinha_server.services import (
     live_events,
-    song_runtime,
     tiktok_monitor,
     top_supporters,
 )
@@ -49,8 +48,6 @@ def api_monitor_status() -> JSONResponse:
                 live_events.status(),
             "top_supporters":
                 top_supporters.status(),
-            "gift_audio":
-                song_runtime.gift_audio_diagnostics(),
             "event_decision_worker":
                 event_decision_worker_status(),
             "social_dispatcher":

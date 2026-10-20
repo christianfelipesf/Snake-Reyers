@@ -24,7 +24,6 @@ fi
 mkdir -p "${SERVER_DIR}/runs/logs"
 export COBRINHA_SERVER_DIR="${SERVER_DIR}"
 export PYTHONPATH="${SERVER_DIR}/src"
-export TTS_HOME="${SERVER_DIR}/runtime/tts"
 
 if ! "${PYTHON}" "${ROOT_DIR}/launcher/update.py" --install; then
 	echo "Nao foi possivel atualizar agora; iniciando a versao instalada." >&2

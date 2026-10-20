@@ -18,7 +18,7 @@ def main() -> int:
     )
     audio_path = Path(result["audio_path"])
     if not audio_path.is_file() or audio_path.stat().st_size <= 44:
-        raise SystemExit("O XTTS nao gerou um arquivo WAV valido.")
+        raise SystemExit("O Piper nao gerou um arquivo WAV valido.")
 
     print(
         json.dumps(

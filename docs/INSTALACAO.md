@@ -33,9 +33,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\installer\windows\install.ps1
 ```
 
-O instalador prepara cópias locais de Python, Node.js e Tor. Também instala o Coqui XTTS, baixa o modelo de voz e instala vozes e músicas. Esses componentes ficam dentro da pasta do Snake Reyers e não substituem instalações globais do computador.
-
-Quando a licença Coqui Public Model License aparecer, leia os termos e responda `S` somente se concordar.
+O instalador prepara cópias locais de Python e Node.js, instala o Piper e baixa as vozes em português e os pacotes de música de fundo. Esses componentes ficam dentro da pasta do Snake Reyers e não substituem instalações globais do computador.
 
 ### 4. Iniciar
 
@@ -70,16 +68,16 @@ A chave da API é salva apenas no computador local. Os custos da API, quando hou
 4. Confirme que o áudio do aplicativo está entrando no mixer.
 5. Faça uma prévia antes de iniciar a live.
 
-Na versão Windows, o áudio sai pelo próprio jogo. Não configure uma transmissão GStreamer paralela.
+O áudio sai pelo próprio jogo. A captura e a transmissão ficam por conta do TikTok LIVE Studio.
 
 ## Linux
 
-Instale previamente Python 3 com suporte a `venv`, Node.js 22+, npm, Tor, GStreamer e os plugins necessários para H.264, AAC e RTMP.
+Instale previamente Python 3 com suporte a `venv`, Node.js 22+, npm e um ambiente gráfico com display ativo.
 
 Depois de baixar a Release Linux:
 
 ```bash
-tar -xzf SnakeReyers-0.1.7-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.2.0-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh
 ./installer/linux/install.sh
@@ -87,26 +85,22 @@ chmod +x installer/linux/install.sh
 
 Depois da instalação, abra o atalho **Snake Reyers** criado na Área de Trabalho.
 
-Para uma instalação automatizada, a aceitação da licença Coqui pode ser informada explicitamente:
-
-```bash
-SNAKE_REYERS_ACCEPT_COQUI_LICENSE=1 ./installer/linux/install.sh
-```
+O painel permite informar o display usado pelo jogo e escolher entre o build compilado e o Godot editor, quando o projeto estiver disponível.
 
 ## Verificar os downloads
 
-Compare o SHA-256 com `SnakeReyers-0.1.7-checksums.json` publicado na Release.
+Compare o SHA-256 com `SnakeReyers-0.2.0-checksums.json` publicado na Release.
 
 Windows:
 
 ```powershell
-Get-FileHash .\SnakeReyers-0.1.7-Windows-x64.zip -Algorithm SHA256
+Get-FileHash .\SnakeReyers-0.2.0-Windows-x64.zip -Algorithm SHA256
 ```
 
 Linux:
 
 ```bash
-sha256sum SnakeReyers-0.1.7-Linux-x64.tar.gz
+sha256sum SnakeReyers-0.2.0-Linux-x64.tar.gz
 ```
 
 ## Problemas comuns
@@ -119,9 +113,13 @@ Confira `server/runs/logs/server-error.log` e tente abrir `http://127.0.0.1:9393
 
 Confirme no painel se o monitor está **conectado** e **escutando**. A live do usuário informado precisa estar online.
 
+### O monitor não conecta
+
+Por padrão, o monitor usa uma conexão direta. Se a sua rede exigir um proxy SOCKS, defina `SNAKE_REYERS_MONITOR_PROXY` antes de abrir o Snake Reyers, por exemplo `socks5h://127.0.0.1:1080`. Se você usa um provedor de assinatura do TikTok, defina também `SNAKE_REYERS_SIGN_API_KEY`. Essas duas opções são opcionais e não são necessárias para o funcionamento normal.
+
 ### A primeira fala demora
 
-Na primeira fala depois de iniciar, o XTTS carrega o modelo na memória. As falas seguintes ficam mais rápidas.
+Na primeira fala depois de iniciar, o Piper carrega o modelo de voz na memória. As falas seguintes ficam mais rápidas.
 
 ### O Windows bloqueou um arquivo
 
@@ -129,7 +127,7 @@ Extraia novamente em uma pasta comum, como `C:\SnakeReyers`, e autorize o aplica
 
 ### A instalação ficou sem espaço
 
-O modelo de voz, PyTorch e os pacotes de áudio ocupam vários gigabytes. Libere pelo menos 20 GB e execute o instalador novamente.
+As dependências, as vozes e os pacotes de áudio ocupam alguns gigabytes. Libere pelo menos 5 GB e execute o instalador novamente.
 
 ## Ajuda
 

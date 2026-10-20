@@ -55,5 +55,30 @@ def test_rate_limit_error_tells_user_not_to_reconnect_repeatedly():
         username="criador_exemplo",
     )
 
-    assert "Limite horario" in message
+    assert "Limite temporario" in message
     assert "nao reinicie" in message
+
+
+def test_monitor_readiness_does_not_require_proxy(monkeypatch):
+    monkeypatch.setattr(
+        tiktok_monitor_runtime,
+        "node_source_status",
+        lambda: {
+            "directory_exists": True,
+            "entry_exists": True,
+            "package_exists": True,
+            "node_binary": "node",
+            "node_modules_exists": True,
+        },
+    )
+    monkeypatch.setattr(
+        tiktok_monitor_runtime,
+        "local_server_status",
+        lambda: {},
+    )
+
+    state = tiktok_monitor_runtime.readiness()
+
+    assert state["ready_to_launch"] is True
+    assert "tor_ready" not in state
+    assert "tor" not in state

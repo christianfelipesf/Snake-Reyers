@@ -4,30 +4,9 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
-from cobrinha_server.core.settings import ASSETS_DIR
-
-
-SPECTATOR_VOICE_DIR = (
-    ASSETS_DIR
-    / "voice"
-    / "OUTRAS_COBRAS"
-    / "wav"
+from cobrinha_server.services.tts_service import (
+    available_voice_paths,
 )
-
-
-def available_voice_paths() -> list[Path]:
-    if not SPECTATOR_VOICE_DIR.is_dir():
-        return []
-
-    return [
-        path.resolve()
-        for path in sorted(
-            SPECTATOR_VOICE_DIR.glob("*.wav"),
-            key=lambda item: item.name.casefold(),
-        )
-        if path.is_file()
-        and path.stat().st_size > 1024
-    ]
 
 
 def _metadata_user_key(

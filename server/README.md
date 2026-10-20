@@ -16,4 +16,4 @@ O painel fica em `http://127.0.0.1:9393`.
 
 Dados privados sao gravados em `private/` e arquivos temporarios em `runs/`. Essas pastas nunca devem ser enviadas ao GitHub.
 
-O projeto-fonte Godot nao faz parte desta distribuicao. Preview, editor de terreno e live usam a build compilada correspondente ao sistema operacional.
+O projeto-fonte Godot nao faz parte desta distribuicao. O jogo usa a build compilada correspondente ao sistema operacional.

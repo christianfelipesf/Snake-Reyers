@@ -10,30 +10,21 @@ from fastapi.responses import JSONResponse
 
 from cobrinha_server.bridge.godot_bridge import (
     godot_bridge,
-    preview_bridge,
 )
-from cobrinha_server.services.preview_renderer import (
-    preview_status,
-    terrain_editor_status,
-)
-from cobrinha_server.services.output_state import (
-    status as output_status,
+from cobrinha_server.core.settings import (
+    PROJECT_DIR,
+    application_version,
 )
 from cobrinha_server.services import (
+    game_launcher,
     live_watchdog,
     music_runtime,
-    song_runtime,
 )
 from cobrinha_server.services.event_decision_worker import (
     status as event_decision_worker_status,
 )
 from cobrinha_server.services.speech_queue import (
     status as speech_queue_status,
-)
-from cobrinha_server.core.settings import (
-    ASSETS_DIR,
-    PROJECT_DIR,
-    application_version,
 )
 
 
@@ -52,11 +43,8 @@ def _module_status() -> dict[str, bool]:
         "audio_timeline": (
             base / "audio_timeline.py"
         ).is_file(),
-        "audio_routing": (
-            base / "audio_routing.py"
-        ).is_file(),
-        "transmission": (
-            base / "transmission.py"
+        "game_launcher": (
+            base / "game_launcher.py"
         ).is_file(),
     }
 
@@ -65,11 +53,8 @@ def _voice_stack_status() -> dict[str, bool]:
     result: dict[str, bool] = {}
 
     modules = {
-        "demucs": "demucs",
-        "torch": "torch",
-        "torchaudio": "torchaudio",
-        "tts": "TTS",
-        "transformers": "transformers",
+        "piper": "piper",
+        "onnxruntime": "onnxruntime",
     }
 
     for label, module_name in modules.items():
@@ -84,53 +69,12 @@ def _voice_stack_status() -> dict[str, bool]:
 
 
 def server_status() -> dict[str, Any]:
-    music_dir = (
-        ASSETS_DIR
-        / "music"
-        / "background"
-    )
-    songs_dir = (
-        ASSETS_DIR
-        / "songs"
-    )
-
-    music_count = len(
-        [
-            path
-            for path in music_dir.glob("*")
-            if path.is_file()
-            and not path.name.startswith(".")
-        ]
-    )
-
-    song_state = song_runtime.status()
-    processed_songs = (
-        song_state.get("songs")
-        if isinstance(
-            song_state.get("songs"),
-            list,
-        )
-        else []
-    )
-    processing = (
-        song_state.get("processing")
-        if isinstance(
-            song_state.get("processing"),
-            dict,
-        )
-        else {}
-    )
-    active_song = (
-        song_state.get("active")
-        if isinstance(
-            song_state.get("active"),
-            dict,
-        )
-        else {}
-    )
-    song_count = len(processed_songs)
+    music_state = music_runtime.status()
     watchdog = live_watchdog.status()
-    output = output_status()
+    queue_state = speech_queue_status()
+    speech_active = bool(
+        queue_state.get("active")
+    )
 
     return {
         "ok": True,
@@ -138,39 +82,26 @@ def server_status() -> dict[str, Any]:
         "version": application_version(),
         "time": time.time(),
         "godot": godot_bridge.status(),
-        "preview": {
-            "process": preview_status(),
-            "bridge": preview_bridge.status(),
-        },
-        "terrain_editor": {
-            "process": terrain_editor_status(),
-        },
+        "game": game_launcher.status(),
         "vocal": {
             "mode": (
-                "processing"
-                if processing.get("active")
-                else (
-                    "singing"
-                    if active_song.get("playing")
-                    else "idle"
-                )
+                "speech"
+                if speech_active
+                else "idle"
             ),
-            "active": bool(
-                processing.get("active")
-                or active_song.get("playing")
-            ),
-            "song_runtime": song_state,
+            "active": speech_active,
         },
         "music": {
-            "background_tracks": music_count,
-            "songs": song_count,
-            "runtime":
-                music_runtime.status(),
+            "background_tracks": int(
+                music_state.get("track_count")
+                or 0
+            ),
+            "runtime": music_state,
         },
         "event_decision_worker":
             event_decision_worker_status(),
         "speech_queue":
-            speech_queue_status(),
+            queue_state,
         "watchdog":
             watchdog,
         "modules": _module_status(),
@@ -184,10 +115,6 @@ def server_status() -> dict[str, Any]:
                 or "idle"
             ),
         },
-        "transmission":
-            output,
-        "output":
-            output,
     }
 
 

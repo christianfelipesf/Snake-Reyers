@@ -15,7 +15,6 @@ from cobrinha_server.services import (
     content_updates,
     godot_runtime_state,
     live_events,
-    song_runtime,
     top_supporters,
 )
 from cobrinha_server.services.avatar_cache import cache_profile_avatar
@@ -148,9 +147,6 @@ async def _loop() -> None:
 
 
 def _speech_pipeline_can_accept_next() -> bool:
-    if song_runtime.singing_blocks_speech():
-        return False
-
     if godot_runtime_state.heart_me_band_music_showcase_active():
         return False
 
@@ -246,7 +242,6 @@ async def _send_spectator_activity(
         },
         avatar_path=avatar_path,
         source=source,
-        preview=False,
     )
     payload = message.setdefault("payload", {})
     if isinstance(payload, dict):
@@ -396,16 +391,7 @@ def _gift_key_from_name(
 
 def _gift_key(
     event: dict[str, Any],
-    song_trigger: dict[str, Any] | None = None,
 ) -> str:
-    if isinstance(song_trigger, dict):
-        trigger_key = str(
-            song_trigger.get("gift_key")
-            or ""
-        ).strip()
-        if trigger_key:
-            return trigger_key
-
     return _gift_key_from_name(
         _gift_name(event)
     )
@@ -637,9 +623,8 @@ def _gift_job_metadata(
     display_name: str,
     source: str = "social_gift",
     audio_role: str = "gift_thanks",
-    song_trigger: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    metadata: dict[str, Any] = {
+    return {
         "source": source,
         "event_id": str(event.get("id") or ""),
         "speaker": "main",
@@ -650,11 +635,8 @@ def _gift_job_metadata(
         "avatar_path": avatar_path,
         "snake_color": _snake_color_for_user(user_key),
         "audio_role": audio_role,
-        "gift_key": _gift_key(event, song_trigger),
+        "gift_key": _gift_key(event),
     }
-    if song_trigger is not None:
-        metadata["song_trigger"] = song_trigger
-    return metadata
 
 
 def _mark_gift_thanked(
@@ -817,18 +799,12 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
 
     display_name = _display_name(event)
     user_key = _event_user_key(event) or display_name
-    song_trigger = song_runtime.song_trigger_for_gift_event(
-        event
-    )
-    gift_key = _gift_key(
-        event,
-        song_trigger,
-    )
+    gift_key = _gift_key(event)
     heart_me_band = (
         _is_heart_me_band_gift_key(gift_key)
         or configured_action == "heart_me_band"
     )
-    heart_me_payload: dict[str, Any] = {}
+
     if heart_me_band:
         heart_me_payload = _heart_me_band_user_payload(
             event,
@@ -842,147 +818,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
                 heart_me_payload
             )
         )
-
-        if song_runtime.singing_active():
-            _write_status(
-                running=True,
-                last_action="heart_me_band_user_joined_active_song",
-                last_error="",
-                events_processed=int(_STATE.get("events_processed") or 0) + 1,
-                gifts_processed=int(_STATE.get("gifts_processed") or 0) + 1,
-            )
-            return {
-                "ok": True,
-                "kind": "gift",
-                "heart_me_band": heart_me_payload,
-                "thanked": False,
-            }
-
-    song = song_trigger.get(
-        "song"
-    )
-
-    if isinstance(song, dict):
-        message = song_runtime.song_ready_message(
-            song.get(
-                "id",
-                "",
-            )
-        )
-        payload = (
-            message.get("payload")
-            if isinstance(
-                message.get("payload"),
-                dict,
-            )
-            else {}
-        )
-        metadata = (
-            event.get("metadata")
-            if isinstance(
-                event.get("metadata"),
-                dict,
-            )
-            else {}
-        )
-        payload["gift_event_id"] = str(
-            event.get("id")
-            or ""
-        )
-        payload["gift_name"] = str(
-            metadata.get("gift_name")
-            or event.get("text")
-            or ""
-        )
-        payload["gift_count"] = int(
-            metadata.get("count")
-            or 1
-        )
-        payload["gift_key"] = gift_key
-        payload["display_name"] = display_name
-        payload["user_id"] = str(
-            event.get("user_id")
-            or user_key
-        )
-        payload["username"] = str(
-            event.get("username")
-            or ""
-        )
-        payload["avatar_url"] = str(
-            event.get("avatar_url")
-            or event.get("profile_image")
-            or ""
-        )
-        payload["avatar_path"] = avatar_path
-
-        if heart_me_band:
-            payload["heart_me_band"] = True
-            payload["mix_path"] = ""
-            payload["vocal_volume"] = 1.0
-            payload["instrumental_volume"] = 0.86
-            payload["mix_volume"] = 0.0
-            payload["fanclub_users"] = [
-                heart_me_payload,
-            ]
-
-        message["payload"] = payload
-
-        sent = await godot_bridge.send(
-            message
-        )
-
-        if sent:
-            song_runtime.mark_playing(
-                payload.get(
-                    "song_id",
-                    "",
-                ),
-                payload.get(
-                    "title",
-                    "",
-                ),
-                duration=payload.get(
-                    "timeline_end",
-                    0.0,
-                ),
-            )
-            reply = await asyncio.to_thread(
-                _gift_reply,
-                event,
-                display_name=display_name,
-                user_key=user_key,
-            )
-            job = enqueue_text(
-                reply,
-                priority=int(event.get("priority") or 65),
-                actor="main",
-                metadata=_gift_job_metadata(
-                    event,
-                    avatar_path=avatar_path,
-                    user_key=user_key,
-                    display_name=display_name,
-                    source="social_gift_song",
-                    audio_role="gift_song_thanks",
-                    song_trigger=song_trigger,
-                ),
-            )
-            _GIFT_THANK_BUFFER.clear()
-            _mark_gift_thanked(gift_key)
-            _write_status(
-                running=True,
-                last_action="gift_song_sent_thanks_queued",
-                last_error="",
-                events_processed=int(_STATE.get("events_processed") or 0) + 1,
-                gifts_processed=int(_STATE.get("gifts_processed") or 0) + 1,
-            )
-            return {
-                "ok": True,
-                "kind": "gift",
-                "song": payload,
-                "song_trigger": song_trigger,
-                "job": job,
-                "thanked": True,
-            }
 
     _record_gift_for_group(
         event,
@@ -1011,7 +846,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
                 display_name=display_name,
                 source="social_gift_group",
                 audio_role="gift_group_thanks",
-                song_trigger=song_trigger,
             ),
         )
         _mark_gift_group_thanked(group_items)
@@ -1025,7 +859,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
         return {
             "ok": True,
             "kind": "gift",
-            "song_trigger": song_trigger,
             "job": job,
             "grouped": True,
         }
@@ -1048,7 +881,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
         return {
             "ok": True,
             "kind": "gift",
-            "song_trigger": song_trigger,
             "thanked": False,
             "reason": skip_reason,
         }
@@ -1068,11 +900,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
             avatar_path=avatar_path,
             user_key=user_key,
             display_name=display_name,
-            song_trigger=(
-                song_trigger
-                if bool(song_trigger.get("mapped"))
-                else None
-            ),
         ),
     )
     _GIFT_THANK_BUFFER.clear()
@@ -1088,7 +915,6 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": True,
         "kind": "gift",
-        "song_trigger": song_trigger,
         "job": job,
         "thanked": True,
     }

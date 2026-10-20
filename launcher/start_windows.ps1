@@ -6,10 +6,6 @@ $RuntimeDir = Join-Path $ServerDir "runtime"
 $Python = Join-Path $ServerDir ".venv\Scripts\python.exe"
 $PythonWindowless = Join-Path $ServerDir ".venv\Scripts\pythonw.exe"
 $NodeDir = Join-Path $RuntimeDir "node"
-$TorExe = Join-Path $RuntimeDir "tor\tor\tor.exe"
-$TorDataDir = Join-Path $ServerDir "private\tor-data"
-$TorGeoIp = Join-Path $RuntimeDir "tor\data\geoip"
-$TorGeoIpv6 = Join-Path $RuntimeDir "tor\data\geoip6"
 $LogDir = Join-Path $ServerDir "runs\logs"
 $ShortcutInstaller = Join-Path $RootDir "launcher\create_shortcut.ps1"
 
@@ -45,9 +41,6 @@ if (
 ) {
     throw "Execute installer\windows\install.ps1 primeiro."
 }
-if (-not (Test-Path $TorExe)) {
-    throw "Tor local ausente. Execute novamente installer\windows\install.ps1."
-}
 $RequiredPayload = @(
     (Join-Path $RootDir "game\windows\SnakeReyers.exe"),
     (Join-Path $ServerDir "assets\audio-manifest.json"),
@@ -60,24 +53,10 @@ if ($MissingPayload.Count -gt 0) {
     throw "Instalacao incompleta. Execute novamente installer\windows\install.ps1."
 }
 
-$GiftSongManifest = Get-ChildItem `
-    -Path (Join-Path $ServerDir "assets\singing\processed\FANCLUB") `
-    -Filter "manifest.json" `
-    -File `
-    -Recurse `
-    -ErrorAction SilentlyContinue `
-    | Select-Object -First 1
-if (-not $GiftSongManifest) {
-    throw "Musicas de presentes ausentes. Execute novamente installer\windows\install.ps1."
-}
-
-New-Item -ItemType Directory -Force -Path $LogDir, $TorDataDir | Out-Null
+New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $env:PATH = "$NodeDir;$env:PATH"
 $env:COBRINHA_SERVER_DIR = $ServerDir
 $env:PYTHONPATH = Join-Path $ServerDir "src"
-$env:TTS_HOME = Join-Path $RuntimeDir "tts"
-$env:COBRINHA_TOR_SOCKS_HOST = "127.0.0.1"
-$env:COBRINHA_TOR_SOCKS_PORT = "9050"
 
 if (Test-LocalPort -Port 9393) {
     try {
@@ -89,27 +68,6 @@ if (Test-LocalPort -Port 9393) {
     } catch {
         throw "A porta 9393 esta ocupada por outro programa."
     }
-}
-
-if (-not (Test-LocalPort -Port 9050)) {
-    Start-Process -FilePath $TorExe -WindowStyle Hidden -ArgumentList @(
-        "--SocksPort", "127.0.0.1:9050",
-        "--DataDirectory", "`"$TorDataDir`"",
-        "--GeoIPFile", "`"$TorGeoIp`"",
-        "--GeoIPv6File", "`"$TorGeoIpv6`""
-    ) -RedirectStandardOutput (Join-Path $LogDir "tor.log") `
-      -RedirectStandardError (Join-Path $LogDir "tor-error.log")
-
-    for ($Attempt = 0; $Attempt -lt 120; $Attempt++) {
-        if (Test-LocalPort -Port 9050) {
-            break
-        }
-        Start-Sleep -Milliseconds 250
-    }
-}
-
-if (-not (Test-LocalPort -Port 9050)) {
-    throw "O Tor nao iniciou. Consulte server\runs\logs\tor-error.log"
 }
 
 & $Python (Join-Path $RootDir "launcher\update.py") --install

@@ -19,10 +19,6 @@ PROFILE_AVATAR_DIR = RUNS_DIR / "profile_avatars"
 SPEECH_TEST_DIR = RUNS_DIR / "speech_test"
 STATE_FILE = RUNS_DIR / "runtime_cleanup.json"
 AUTO_CLEANUP_INTERVAL_LIVES = 3
-DEMUX_DIRS = (
-    RUNS_DIR / "demucs",
-    RUNS_DIR / "demucs_background",
-)
 REFERENCE_STATE_FILES = (
     RUNS_DIR / "speech_active.json",
     RUNS_DIR / "speech_pending_queue.json",
@@ -97,12 +93,18 @@ def _collect_path_strings(value: Any, output: set[str]) -> None:
         return
 
     clean = value.strip()
-    if not clean.startswith("/"):
+    if not clean:
         return
-    candidate = Path(clean)
+
+    candidate = Path(clean).expanduser()
+    if not candidate.is_absolute():
+        return
+
+    candidate = candidate.resolve()
+
     if (
-        PREPARED_AUDIO_DIR in candidate.parents
-        or PROFILE_AVATAR_DIR in candidate.parents
+        PREPARED_AUDIO_DIR.resolve() in candidate.parents
+        or PROFILE_AVATAR_DIR.resolve() in candidate.parents
     ):
         output.add(_resolved(candidate))
 
@@ -145,21 +147,6 @@ def _stale_pid_file(path: Path) -> bool:
     return False
 
 
-def _directory_size(path: Path) -> int:
-    total = 0
-    try:
-        children = path.rglob("*")
-        for child in children:
-            try:
-                if child.is_file():
-                    total += child.stat().st_size
-            except OSError:
-                continue
-    except OSError:
-        pass
-    return total
-
-
 def _candidate_items() -> list[dict[str, Any]]:
     protected = protected_runtime_files()
     items: list[dict[str, Any]] = []
@@ -186,21 +173,6 @@ def _candidate_items() -> list[dict[str, Any]]:
                 items.append(_file_item(path, "historico_da_limpeza"))
             elif path.suffix == ".pid" and _stale_pid_file(path):
                 items.append(_file_item(path, "pids_inativos"))
-
-    for demux_root in DEMUX_DIRS:
-        if not demux_root.is_dir():
-            continue
-        for path in demux_root.iterdir():
-            if not path.is_dir():
-                continue
-            items.append(
-                {
-                    "kind": "directory",
-                    "category": "intermediarios_demucs",
-                    "path": str(path),
-                    "bytes": _directory_size(path),
-                }
-            )
 
     if LOGS_DIR.is_dir():
         for path in LOGS_DIR.iterdir():
@@ -333,10 +305,7 @@ def cleanup(*, trigger: str = "manual") -> dict[str, Any]:
         return result
 
 
-def register_completed_live(
-    *,
-    processing_active: bool = False,
-) -> dict[str, Any]:
+def register_completed_live() -> dict[str, Any]:
     completed_at = time.time()
     with _LOCK:
         state = _read_state()
@@ -351,16 +320,6 @@ def register_completed_live(
             "counted": True,
             "cleanup_triggered": False,
             "deferred": False,
-            **automatic_cleanup_status(),
-        }
-
-    if processing_active:
-        return {
-            "ok": True,
-            "counted": True,
-            "cleanup_triggered": False,
-            "deferred": True,
-            "deferred_reason": "song_processing_active",
             **automatic_cleanup_status(),
         }
 

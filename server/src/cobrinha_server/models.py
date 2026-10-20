@@ -13,7 +13,6 @@ SegmentKind = Literal[
 VocalMode = Literal[
     "idle",
     "speech",
-    "singing",
 ]
 
 

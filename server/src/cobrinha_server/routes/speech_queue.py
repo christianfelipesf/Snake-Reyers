@@ -16,8 +16,8 @@ from cobrinha_server.services.speech_queue import (
 from cobrinha_server.services.tts_service import (
     prepare_tts_input,
     safe_tts_chunks,
+    tts_model_loaded,
     voice_ready,
-    xtts_model_loaded,
 )
 from cobrinha_server.services.tts_worker import (
     worker_status,
@@ -40,8 +40,8 @@ def api_speech_status() -> JSONResponse:
                 dispatcher_running(),
             "worker": worker_status(),
             "voice_ready": voice_ready(),
-            "xtts_model_loaded":
-                xtts_model_loaded(),
+            "tts_model_loaded":
+                tts_model_loaded(),
         }
     )
 

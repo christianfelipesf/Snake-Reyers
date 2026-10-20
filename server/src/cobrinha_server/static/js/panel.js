@@ -92,7 +92,7 @@ function renderLiveHealth(watchdog) {
   if (!issues.length) {
     detail.textContent =
       status === "idle"
-        ? "Sem transmissão ativa."
+        ? "Sem jogo aberto."
         : "Sem alertas.";
     return;
   }
@@ -104,260 +104,64 @@ function renderLiveHealth(watchdog) {
     || "Verificar diagnóstico.";
 }
 
-function normalizeLiveMode(value) {
-  return String(value || "").toLowerCase() === "battle"
-    ? "battle"
-    : "normal";
-}
-
-function secondsToMinutes(value, fallback) {
-  const seconds =
-    Number(value || 0)
-    || Number(fallback || 0);
-
-  return Math.max(
-    1,
-    Math.round(seconds / 60)
-  );
-}
-
-function minutesToSeconds(value, fallback) {
-  const minutes =
-    Number(value || 0)
-    || Number(fallback || 1);
-
-  return Math.max(
-    60,
-    Math.round(minutes * 60)
-  );
-}
-
-function sessionConfigFromSchedule() {
-  const base = {
-    username: "",
-    monitor_server: "http://127.0.0.1:2619",
-    mode: "normal",
-    title: "",
-    game: "Others",
-    audience_type: "0",
-    video_bitrate: 4000,
-    video_encoder: "nvenc",
-    game_runtime: "build",
-    rtmp_sink: "rtmp2sink",
-    auto_start_enabled: false,
-    start_min_seconds: 900,
-    start_max_seconds: 1500,
-    stop_min_seconds: 1620,
-    stop_max_seconds: 2100,
-    ...(latestSessionConfig || {})
-  };
-
+function sessionConfigFromForm() {
   return {
     username:
-      $("scheduleUsername")?.value.trim().replace(/^@+/, "")
-      || base.username,
+      ($("sessionUsername")?.value.trim() || "")
+        .replace(/^@+/, ""),
     monitor_server:
-      $("scheduleMonitorServer")?.value.trim()
-      || base.monitor_server,
-    mode:
-      normalizeLiveMode(
-        $("scheduleMode")?.value
-        || base.mode
-      ),
-    title:
-      $("scheduleTitle")?.value.trim()
-      || base.title
-      || "",
-    game:
-      $("scheduleGame")?.value.trim()
-      || base.game
-      || "Others",
-    audience_type:
-      $("scheduleAudience")?.value
-      || base.audience_type
-      || "0",
-    video_bitrate:
-      Number(
-        $("scheduleBitrate")?.value
-        || base.video_bitrate
-        || 4000
-      ),
-    video_encoder:
-      $("scheduleEncoder")?.value
-      || base.video_encoder
-      || "nvenc",
+      $("sessionMonitorServer")?.value.trim()
+      || "http://127.0.0.1:2619",
     game_runtime:
-      $("scheduleGameRuntime")?.value
-      || base.game_runtime
+      $("sessionGameRuntime")?.value
       || "build",
-    rtmp_sink:
-      $("scheduleSink")?.value
-      || base.rtmp_sink
-      || "rtmp2sink",
-    auto_start_enabled:
-      Boolean(
-        $("scheduleAutoEnabled")?.checked
-      ),
-    enabled:
-      Boolean(
-        $("scheduleAutoEnabled")?.checked
-      ),
-    start_min_seconds:
-      minutesToSeconds(
-        $("scheduleStartMin")?.value,
-        secondsToMinutes(
-          base.start_min_seconds,
-          900
-        )
-      ),
-    start_max_seconds:
-      minutesToSeconds(
-        $("scheduleStartMax")?.value,
-        secondsToMinutes(
-          base.start_max_seconds,
-          1500
-        )
-      ),
-    stop_min_seconds:
-      minutesToSeconds(
-        $("scheduleStopMin")?.value,
-        secondsToMinutes(
-          base.stop_min_seconds,
-          1620
-        )
-      ),
-    stop_max_seconds:
-      minutesToSeconds(
-        $("scheduleStopMax")?.value,
-        secondsToMinutes(
-          base.stop_max_seconds,
-          2100
-        )
-      )
+    godot_executable:
+      $("sessionGodotExecutable")?.value.trim()
+      || "",
+    display:
+      $("sessionDisplay")?.value.trim()
+      || ""
   };
 }
 
-function applySessionConfigToSchedule(config) {
+function applySessionConfig(config) {
   if (!config) return;
 
-  const resolved = {
-    username: "",
-    monitor_server: "http://127.0.0.1:2619",
-    mode: "normal",
-    title: "",
-    game: "Others",
-    audience_type: "0",
-    video_bitrate: 4000,
-    video_encoder: "nvenc",
-    game_runtime: "build",
-    rtmp_sink: "rtmp2sink",
-    auto_start_enabled: false,
-    start_min_seconds: 900,
-    start_max_seconds: 1500,
-    stop_min_seconds: 1620,
-    stop_max_seconds: 2100,
-    ...config
-  };
-
-  if ($("scheduleUsername")) {
-    $("scheduleUsername").value =
-      resolved.username || "";
+  if (
+    $("sessionUsername")
+    && document.activeElement !== $("sessionUsername")
+  ) {
+    $("sessionUsername").value =
+      config.username || "";
   }
 
-  if ($("scheduleMonitorServer")) {
-    $("scheduleMonitorServer").value =
-      resolved.monitor_server || "";
+  if (
+    $("sessionMonitorServer")
+    && document.activeElement !== $("sessionMonitorServer")
+  ) {
+    $("sessionMonitorServer").value =
+      config.monitor_server || "http://127.0.0.1:2619";
   }
 
-  if ($("scheduleMode")) {
-    $("scheduleMode").value =
-      normalizeLiveMode(resolved.mode);
+  if ($("sessionGameRuntime")) {
+    $("sessionGameRuntime").value =
+      config.game_runtime || "build";
   }
 
-  if ($("scheduleTitle")) {
-    $("scheduleTitle").value =
-      resolved.title || "";
+  if (
+    $("sessionGodotExecutable")
+    && document.activeElement !== $("sessionGodotExecutable")
+  ) {
+    $("sessionGodotExecutable").value =
+      config.godot_executable || "";
   }
 
-  if ($("scheduleGame")) {
-    $("scheduleGame").value =
-      resolved.game || "Others";
-  }
-
-  if ($("scheduleAudience")) {
-    $("scheduleAudience").value =
-      String(
-        resolved.audience_type ?? "0"
-      );
-  }
-
-  if ($("scheduleBitrate")) {
-    $("scheduleBitrate").value =
-      String(
-        resolved.video_bitrate || 4000
-      );
-  }
-
-  if ($("scheduleEncoder")) {
-    $("scheduleEncoder").value =
-      resolved.video_encoder || "nvenc";
-  }
-
-  if ($("scheduleGameRuntime")) {
-    $("scheduleGameRuntime").value =
-      resolved.game_runtime || "build";
-  }
-
-  if ($("scheduleSink")) {
-    $("scheduleSink").value =
-      resolved.rtmp_sink || "rtmp2sink";
-  }
-
-  if ($("scheduleStartMin")) {
-    $("scheduleStartMin").value =
-      String(
-        secondsToMinutes(
-          resolved.start_min_seconds,
-          900
-        )
-      );
-  }
-
-  if ($("scheduleStartMax")) {
-    $("scheduleStartMax").value =
-      String(
-        secondsToMinutes(
-          resolved.start_max_seconds,
-          1500
-        )
-      );
-  }
-
-  if ($("scheduleStopMin")) {
-    $("scheduleStopMin").value =
-      String(
-        secondsToMinutes(
-          resolved.stop_min_seconds,
-          1620
-        )
-      );
-  }
-
-  if ($("scheduleStopMax")) {
-    $("scheduleStopMax").value =
-      String(
-        secondsToMinutes(
-          resolved.stop_max_seconds,
-          2100
-        )
-      );
-  }
-
-  if ($("scheduleAutoEnabled")) {
-    $("scheduleAutoEnabled").checked =
-      Boolean(
-        resolved.auto_start_enabled
-      );
+  if (
+    $("sessionDisplay")
+    && document.activeElement !== $("sessionDisplay")
+  ) {
+    $("sessionDisplay").value =
+      config.display || "";
   }
 
   if (
@@ -365,33 +169,17 @@ function applySessionConfigToSchedule(config) {
     && document.activeElement !== $("monitorUsername")
   ) {
     $("monitorUsername").value =
-      resolved.username || "";
+      config.username || "";
   }
 }
 
 function sessionIsActuallyRunning(payload) {
-  const session =
-    payload?.session || {};
-
-  const runtime =
-    session.runtime_orchestrator
-    || session.real_bridge?.runtime
-    || {};
-
-  const sessionState =
-    String(session.state || "");
-
-  const runtimeState =
-    String(runtime.state || "");
-
-  return (
-    sessionState === "running"
-    || runtimeState === "starting"
-    || runtimeState === "running"
-    || runtimeState === "rollback_partial"
-    || Boolean(runtime.game)
-    || Boolean(runtime.capture)
-    || Boolean(runtime.monitor_started)
+  const session = payload?.session || {};
+  return Boolean(
+    session.running
+    || ["starting", "running", "stopping"].includes(
+      String(session.state || "").toLowerCase()
+    )
   );
 }
 
@@ -401,8 +189,7 @@ async function loadSessionConfig() {
     { cache: "no-store" }
   );
 
-  const payload =
-    await response.json();
+  const payload = await response.json();
 
   if (!response.ok || payload?.ok === false) {
     throw new Error(
@@ -414,45 +201,29 @@ async function loadSessionConfig() {
   latestSessionConfig =
     payload.config || {};
 
-  applySessionConfigToSchedule(
+  applySessionConfig(
     latestSessionConfig
   );
-
-  if ($("scheduleStatus")) {
-    $("scheduleStatus").textContent =
-      JSON.stringify(
-        {
-          config:
-            latestSessionConfig,
-          schedule:
-            await loadSessionSchedule()
-        },
-        null,
-        2
-      );
-  }
 
   return latestSessionConfig;
 }
 
-async function saveSessionConfigFromSchedule() {
+async function saveSessionConfig() {
   const config =
-    sessionConfigFromSchedule();
+    sessionConfigFromForm();
 
   const response = await fetch(
     "/api/session/config",
     {
       method: "POST",
       headers: {
-        "Content-Type":
-          "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(config)
     }
   );
 
-  const payload =
-    await response.json();
+  const payload = await response.json();
 
   if (!response.ok || payload?.ok === false) {
     throw new Error(
@@ -464,107 +235,11 @@ async function saveSessionConfigFromSchedule() {
   latestSessionConfig =
     payload.config || config;
 
-  applySessionConfigToSchedule(
+  applySessionConfig(
     latestSessionConfig
   );
-
-  let schedule = {};
-
-  try {
-    schedule = await checkSessionSchedule();
-  } catch (error) {
-    schedule = {
-      ok: false,
-      error: String(error)
-    };
-  }
-
-  if ($("scheduleStatus")) {
-    $("scheduleStatus").textContent =
-      JSON.stringify(
-        {
-          ...payload,
-          schedule
-        },
-        null,
-        2
-      );
-  }
 
   return latestSessionConfig;
-}
-
-async function loadSessionSchedule() {
-  const response = await fetch(
-    "/api/session/schedule",
-    { cache: "no-store" }
-  );
-
-  const payload =
-    await response.json();
-
-  if (!response.ok || payload?.ok === false) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload.schedule || {};
-}
-
-async function checkSessionSchedule() {
-  const response = await fetch(
-    "/api/session/schedule/check",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({})
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  if (!response.ok || payload?.ok === false) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload.schedule || {};
-}
-
-async function openScheduleModal() {
-  const modal = $("scheduleModal");
-  if (!modal) return;
-
-  const config =
-    latestSessionConfig
-    || await loadSessionConfig();
-
-  applySessionConfigToSchedule(config);
-
-  if (typeof modal.showModal === "function") {
-    modal.showModal();
-  } else {
-    modal.setAttribute("open", "open");
-  }
-}
-
-function closeScheduleModal() {
-  const modal = $("scheduleModal");
-  if (!modal) return;
-
-  if (typeof modal.close === "function") {
-    modal.close();
-  } else {
-    modal.removeAttribute("open");
-  }
 }
 
 function openTextureModal() {
@@ -621,7 +296,7 @@ function renderSystemUpdate(payload) {
   const busy = Boolean(payload?.busy);
   const restarting = Boolean(payload?.restart_scheduled);
   const available = Boolean(payload?.update_available);
-  const liveActive = Boolean(payload?.live_active);
+  const gameActive = Boolean(payload?.live_active);
   const current = payload?.current || "desconhecida";
   const next = payload?.available || "não consultada";
 
@@ -654,8 +329,8 @@ function renderSystemUpdate(payload) {
     versions.textContent = `Instalada: ${current} · Disponível: ${next}`;
   }
   if (notice) {
-    notice.textContent = liveActive
-      ? "A live está ativa. Finalize a transmissão antes de instalar."
+    notice.textContent = gameActive
+      ? "O jogo está aberto. Feche-o antes de instalar."
       : "A instalação preserva configurações, músicas e dados locais.";
   }
   if (output) {
@@ -669,7 +344,7 @@ function renderSystemUpdate(payload) {
     checkButton.textContent = busy ? "Verificando..." : "Verificar novamente";
   }
   if (installButton) {
-    installButton.disabled = busy || restarting || !available || liveActive;
+    installButton.disabled = busy || restarting || !available || gameActive;
     installButton.textContent = restarting
       ? "Reiniciando..."
       : busy
@@ -1005,43 +680,13 @@ async function refresh() {
     Boolean(state.godot?.connected)
   );
 
-  const previewRunning = Boolean(
-    state.preview?.process?.running
-  );
-
-  const previewConnected = Boolean(
-    state.preview?.bridge?.connected
-  );
-
   setState(
-    "preview",
-    previewConnected
-      ? "ABERTO / CONECTADO"
-      : (
-          previewRunning
-            ? "ABERTA / SEM BRIDGE"
-            : "FECHADO"
-        ),
-    previewConnected
-  );
-
-  const terrainEditorRunning = Boolean(
-    state.terrain_editor?.process?.running
-  );
-
-  setState(
-    "terrainEditor",
-    terrainEditorRunning
+    "game",
+    state.game?.running
       ? "ABERTO"
       : "FECHADO",
-    terrainEditorRunning
+    Boolean(state.game?.running)
   );
-
-  $("openPreview").disabled =
-    previewRunning;
-
-  $("openTerrainEditor").disabled =
-    terrainEditorRunning;
 
   setState(
     "vocal",
@@ -1049,14 +694,6 @@ async function refresh() {
       state.vocal?.mode || "idle"
     ).toUpperCase(),
     Boolean(state.vocal?.active)
-  );
-
-  setState(
-    "transmission",
-    state.transmission?.running
-      ? "ATIVA"
-      : "PARADA",
-    Boolean(state.transmission?.running)
   );
 
   renderLiveHealth(
@@ -1080,18 +717,13 @@ async function refresh() {
       state.music?.background_tracks || 0
     );
 
-  const songs =
-    Number(
-      state.music?.songs || 0
-    );
-
   const musicRuntime =
     state.music?.runtime || {};
 
   setState(
     "music",
-    `${background} fundo / ${songs} canto`,
-    background > 0 || songs > 0
+    `${background} faixa(s) de fundo`,
+    background > 0
   );
 
   const musicVolume = $("musicVolume");
@@ -1149,22 +781,12 @@ async function refresh() {
         )}%`;
   }
 
-  renderSongRuntime(
-    state.vocal?.song_runtime || {}
-  );
-
   const monitorRunning = Boolean(
     monitorState.monitor?.running
   );
 
   const monitorListening = Boolean(
     monitorState.monitor?.listening
-  );
-
-  const torReady = Boolean(
-    monitorState.monitor
-      ?.network
-      ?.socks_listening
   );
 
   const monitorError = String(
@@ -1184,7 +806,7 @@ async function refresh() {
   setState(
     "monitor",
     monitorRateLimited
-      ? "LIMITE EULER · AGUARDANDO"
+      ? "LIMITE TEMPORÁRIO · AGUARDANDO"
       : liveNotFound
       ? "LIVE NÃO ENCONTRADA"
       : monitorListening
@@ -1192,11 +814,7 @@ async function refresh() {
       : (
           monitorRunning
             ? "CONECTANDO"
-            : (
-                torReady
-                  ? "PARADO / TOR OK"
-                  : "PARADO / TOR INDISPONÍVEL"
-              )
+            : "PARADO"
         ),
     monitorListening
   );
@@ -1229,21 +847,10 @@ async function refresh() {
       ?.counters?.gift_socket || 0
   );
 
-  const readyGiftSongs = Number(
-    monitorState.gift_audio
-      ?.ready_gifts || 0
-  );
-
-  const configuredGiftSongs = Number(
-    monitorState.gift_audio
-      ?.configured_gifts || 0
-  );
-
   setState(
     "socialEvents",
     `${commentsPending} comentários / ${giftsPending} presentes na fila | `
-      + `${giftsReceived}/${giftsAtSocket} presentes aceitos | `
-      + `${readyGiftSongs}/${configuredGiftSongs} reações com áudio`,
+      + `${giftsReceived}/${giftsAtSocket} presentes aceitos`,
     commentsPending > 0
       || giftsPending > 0
       || giftsReceived > 0
@@ -1357,7 +964,7 @@ async function sendSpeechTest() {
 
 async function startMonitor() {
   const config =
-    sessionConfigFromSchedule();
+    sessionConfigFromForm();
 
   const username =
     (
@@ -1525,530 +1132,6 @@ function queueMusicRuntimeUpdate() {
     );
 }
 
-function replaceSelectOptions(
-  select,
-  items,
-  valueFor,
-  labelFor,
-  emptyLabel
-) {
-  if (!select) return;
-
-  const previousValue =
-    select.value;
-
-  select.replaceChildren();
-
-  if (!items.length) {
-    const option =
-      document.createElement("option");
-
-    option.value = "";
-    option.textContent = emptyLabel;
-    select.appendChild(option);
-    return;
-  }
-
-  for (const item of items) {
-    const option =
-      document.createElement("option");
-
-    option.value =
-      valueFor(item);
-    option.textContent =
-      labelFor(item);
-    select.appendChild(option);
-  }
-
-  if (
-    previousValue
-    && items.some(
-      item => valueFor(item) === previousValue
-    )
-  ) {
-    select.value = previousValue;
-  }
-}
-
-function renderSongRuntime(runtime) {
-  const sourceSelect =
-    $("songSource");
-  const songSelect =
-    $("songSelect");
-  const statusNode =
-    $("songRuntimeStatus");
-  const mappingStatusNode =
-    $("songGiftMapStatus");
-
-  if (
-    !sourceSelect
-    || !songSelect
-    || !statusNode
-  ) {
-    return;
-  }
-
-  const sources =
-    Array.isArray(runtime.sources)
-      ? runtime.sources
-      : [];
-
-  const songs =
-    Array.isArray(runtime.songs)
-      ? runtime.songs.filter(
-          item => item?.ready
-        )
-      : [];
-  const mappings =
-    Array.isArray(runtime.gift_mappings)
-      ? runtime.gift_mappings
-      : [];
-
-  replaceSelectOptions(
-    sourceSelect,
-    sources,
-    item => String(item.path || ""),
-    item => String(item.name || item.path || ""),
-    "Nenhuma música encontrada"
-  );
-
-  replaceSelectOptions(
-    songSelect,
-    songs,
-    item => String(item.id || ""),
-    item => String(item.title || item.id || ""),
-    "Nenhuma música processada"
-  );
-
-  const processing =
-    runtime.processing || {};
-
-  const active =
-    runtime.active || {};
-
-  const demucsReady =
-    Boolean(runtime.demucs_available);
-
-  const ffmpegReady =
-    Boolean(runtime.ffmpeg_available);
-
-  const statusParts = [
-    demucsReady
-      ? "Demucs OK"
-      : "Demucs pendente",
-    ffmpegReady
-      ? "ffmpeg OK"
-      : "ffmpeg pendente",
-    `${sources.length} entrada(s)`,
-    `${songs.length} processada(s)`
-  ];
-
-  if (processing.active) {
-    statusParts.push(
-      `processando ${processing.song_id || ""}`
-    );
-  }
-
-  if (active.playing) {
-    statusParts.push(
-      `tocando ${active.title || active.song_id || ""}`
-    );
-  }
-
-  if (processing.error) {
-    statusParts.push(
-      processing.error
-    );
-  }
-
-  statusNode.textContent =
-    statusParts.join(" · ");
-
-  if (mappingStatusNode) {
-    if (!mappings.length) {
-      mappingStatusNode.textContent =
-        "Nenhum presente vinculado.";
-    } else {
-      mappingStatusNode.textContent =
-        mappings
-          .map(item => {
-            const songIds =
-              Array.isArray(item.song_ids)
-                ? item.song_ids.filter(Boolean)
-                : [];
-            const songTitles =
-              Array.isArray(item.song_titles)
-                ? item.song_titles.filter(Boolean)
-                : [];
-            const names =
-              songTitles.length
-                ? songTitles
-                : songIds;
-            const songsLabel =
-              names.length
-                ? names.join(" / ")
-                : item.song_title || item.song_id || "";
-            const label =
-              `${item.gift_key} -> ${songsLabel}`;
-            const details = [];
-
-            if ((item.song_count || 0) > 1) {
-              details.push(
-                `${item.song_count} opções`
-              );
-            }
-
-            if (
-              item.ready_song_count !== undefined
-              && item.ready_song_count !== item.song_count
-            ) {
-              details.push(
-                `${item.ready_song_count || 0}/${item.song_count || 0} prontas`
-              );
-            }
-
-            const fullLabel =
-              details.length
-                ? `${label} (${details.join(", ")})`
-                : label;
-
-            return item.ready
-              ? fullLabel
-              : `${fullLabel} (pendente)`;
-          })
-          .join(" · ");
-    }
-  }
-
-  if ($("songProcess")) {
-    $("songProcess").disabled =
-      processing.active
-      || !sourceSelect.value
-      || !demucsReady
-      || !ffmpegReady;
-  }
-
-  if ($("songPlay")) {
-    $("songPlay").disabled =
-      !songSelect.value;
-  }
-
-  if ($("songStop")) {
-    $("songStop").disabled =
-      !active.playing;
-  }
-
-  if ($("songMapGift")) {
-    $("songMapGift").disabled =
-      !songSelect.value
-      || !$("songGiftName")?.value.trim();
-  }
-
-  if ($("songRemoveGiftSong")) {
-    $("songRemoveGiftSong").disabled =
-      !songSelect.value
-      || !$("songGiftName")?.value.trim();
-  }
-
-  if ($("songRemoveGift")) {
-    $("songRemoveGift").disabled =
-      !$("songGiftName")?.value.trim();
-  }
-}
-
-async function refreshSongRuntime() {
-  const response = await fetch(
-    "/api/songs/runtime",
-    { cache: "no-store" }
-  );
-
-  const payload =
-    await response.json();
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  return payload;
-}
-
-async function processSong() {
-  const source =
-    $("songSource")?.value || "";
-
-  const response = await fetch(
-    "/api/songs/process",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        source_path: source
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
-async function playSong() {
-  const songId =
-    $("songSelect")?.value || "";
-
-  const response = await fetch(
-    "/api/songs/play",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        song_id: songId
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
-async function stopSong() {
-  const response = await fetch(
-    "/api/songs/stop",
-    {
-      method: "POST"
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
-async function mapGiftSong() {
-  const giftName =
-    $("songGiftName")?.value.trim() || "";
-  const songId =
-    $("songSelect")?.value || "";
-
-  const response = await fetch(
-    "/api/songs/gift-map",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        gift_name: giftName,
-        song_id: songId,
-        append: true
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
-async function removeGiftSongFromGift() {
-  const giftName =
-    $("songGiftName")?.value.trim() || "";
-  const songId =
-    $("songSelect")?.value || "";
-
-  const response = await fetch(
-    "/api/songs/gift-map/remove",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        gift_name: giftName,
-        song_id: songId
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
-async function removeGiftSong() {
-  const giftName =
-    $("songGiftName")?.value.trim() || "";
-
-  const response = await fetch(
-    "/api/songs/gift-map/remove",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        gift_name: giftName
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  $("songResult").textContent =
-    JSON.stringify(
-      payload,
-      null,
-      2
-    );
-
-  renderSongRuntime(
-    payload.song_runtime || {}
-  );
-
-  if (
-    !response.ok
-    || payload?.ok === false
-  ) {
-    throw new Error(
-      payload?.error
-      || `HTTP ${response.status}`
-    );
-  }
-
-  return payload;
-}
-
 $("musicVolume")?.addEventListener(
   "input",
   () => {
@@ -2067,97 +1150,6 @@ $("musicVolume")?.addEventListener(
 $("musicEnabled")?.addEventListener(
   "change",
   queueMusicRuntimeUpdate
-);
-
-$("songRefresh")?.addEventListener(
-  "click",
-  () => {
-    refreshSongRuntime().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songProcess")?.addEventListener(
-  "click",
-  () => {
-    processSong().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songPlay")?.addEventListener(
-  "click",
-  () => {
-    playSong().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songStop")?.addEventListener(
-  "click",
-  () => {
-    stopSong().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songGiftName")?.addEventListener(
-  "input",
-  () => refreshSongRuntime().catch(
-    () => {}
-  )
-);
-
-$("songMapGift")?.addEventListener(
-  "click",
-  () => {
-    mapGiftSong().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songRemoveGiftSong")?.addEventListener(
-  "click",
-  () => {
-    removeGiftSongFromGift().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
-);
-
-$("songRemoveGift")?.addEventListener(
-  "click",
-  () => {
-    removeGiftSong().catch(
-      error => {
-        $("songResult").textContent =
-          String(error);
-      }
-    );
-  }
 );
 
 $("buildGodot")?.addEventListener(
@@ -2259,7 +1251,7 @@ function renderContentUpdates(payload) {
       lines.push(`- ${item.title || item.id} · versão ${item.version} · ${formatCleanupBytes(item.bytes)}`);
     });
     if (payload?.live_active && available > 0) {
-      lines.push("A instalação aguardará a live terminar.");
+      lines.push("A instalação aguardará o jogo fechar.");
     }
     result.textContent = lines.join("\n");
   }
@@ -2478,74 +1470,6 @@ $("speechSend").addEventListener(
   }
 );
 
-$("openPreview").addEventListener(
-  "click",
-  async () => {
-    $("openPreview").disabled = true;
-
-    try {
-      const response = await fetch(
-        "/api/preview/open",
-        {
-          method: "POST"
-        }
-      );
-
-      const payload =
-        await response.json();
-
-      $("state").textContent =
-        JSON.stringify(
-          payload,
-          null,
-          2
-        );
-    } catch (error) {
-      $("state").textContent =
-        String(error);
-    }
-
-    setTimeout(
-      () => refresh().catch(console.error),
-      700
-    );
-  }
-);
-
-$("openTerrainEditor").addEventListener(
-  "click",
-  async () => {
-    $("openTerrainEditor").disabled = true;
-
-    try {
-      const response = await fetch(
-        "/api/terrain-editor/open",
-        {
-          method: "POST"
-        }
-      );
-
-      const payload =
-        await response.json();
-
-      $("state").textContent =
-        JSON.stringify(
-          payload,
-          null,
-          2
-        );
-    } catch (error) {
-      $("state").textContent =
-        String(error);
-    }
-
-    setTimeout(
-      () => refresh().catch(console.error),
-      700
-    );
-  }
-);
-
 $("refresh").addEventListener(
   "click",
   () => {
@@ -2553,6 +1477,16 @@ $("refresh").addEventListener(
       refresh(),
       loadSessionConfig()
     ]).catch(console.error);
+  }
+);
+
+$("sessionSave")?.addEventListener(
+  "click",
+  () => {
+    saveSessionConfig().catch(error => {
+      const result = $("sessionResult");
+      if (result) result.textContent = String(error);
+    });
   }
 );
 
@@ -2599,6 +1533,10 @@ setInterval(
   () => refresh().catch(console.error),
   1500
 );
+setInterval(
+  () => refreshSessionControl().catch(console.error),
+  3000
+);
 
 async function refreshSessionControl() {
   const response = await fetch(
@@ -2617,8 +1555,8 @@ async function refreshSessionControl() {
   if (top) {
     top.textContent =
       running
-        ? "Parar live"
-        : "Iniciar live";
+        ? "Fechar jogo"
+        : "Abrir jogo";
 
     top.classList.toggle(
       "running",
@@ -2642,15 +1580,30 @@ async function refreshSessionControl() {
       !running;
   }
 
+  const config =
+    payload.config || {};
+
+  if (!latestSessionConfig) {
+    latestSessionConfig = config;
+    applySessionConfig(config);
+  }
+
   return payload;
 }
 
-async function loadRuntimePreview() {
-  await saveSessionConfigFromSchedule();
+async function requestSessionStart() {
+  const config =
+    await saveSessionConfig();
 
   const response = await fetch(
-    "/api/session/runtime-preview",
-    { cache: "no-store" }
+    "/api/session/start",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(config)
+    }
   );
 
   const payload = await response.json();
@@ -2659,82 +1612,7 @@ async function loadRuntimePreview() {
 
   if (result) {
     result.textContent =
-      JSON.stringify(
-        payload,
-        null,
-        2
-      );
-  }
-
-  return payload;
-}
-
-async function planSession() {
-  const config =
-    await saveSessionConfigFromSchedule();
-
-  const response = await fetch(
-    "/api/session/plan",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify({
-        action: "start",
-        ...config
-      })
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  const result =
-    $("sessionResult");
-
-  if (result) {
-    result.textContent =
-      JSON.stringify(
-        payload,
-        null,
-        2
-      );
-  }
-
-  return payload;
-}
-
-async function requestSessionStart() {
-  const config =
-    await saveSessionConfigFromSchedule();
-
-  const response = await fetch(
-    "/api/session/start",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
-      body: JSON.stringify(config)
-    }
-  );
-
-  const payload =
-    await response.json();
-
-  const result =
-    $("sessionResult");
-
-  if (result) {
-    result.textContent =
-      JSON.stringify(
-        payload,
-        null,
-        2
-      );
+      JSON.stringify(payload, null, 2);
   }
 
   await refreshSessionControl();
@@ -2748,49 +1626,25 @@ async function requestSessionStop() {
     {
       method: "POST",
       headers: {
-        "Content-Type":
-          "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({})
     }
   );
 
-  const payload =
-    await response.json();
+  const payload = await response.json();
 
-  const result =
-    $("sessionResult");
+  const result = $("sessionResult");
 
   if (result) {
     result.textContent =
-      JSON.stringify(
-        payload,
-        null,
-        2
-      );
+      JSON.stringify(payload, null, 2);
   }
 
   await refreshSessionControl();
 
   return payload;
 }
-
-$("sessionPlan")?.addEventListener(
-  "click",
-  () => {
-    planSession().catch(
-      error => {
-        const result =
-          $("sessionResult");
-
-        if (result) {
-          result.textContent =
-            String(error);
-        }
-      }
-    );
-  }
-);
 
 $("openaiSave")?.addEventListener(
   "click",
@@ -2808,28 +1662,6 @@ $("openaiRemove")?.addEventListener(
       if ($("openaiStatus")) $("openaiStatus").textContent = String(error);
     });
   }
-);
-
-$("openScheduleModal")?.addEventListener(
-  "click",
-  () => {
-    openScheduleModal().catch(
-      error => {
-        const result =
-          $("sessionResult");
-
-        if (result) {
-          result.textContent =
-            String(error);
-        }
-      }
-    );
-  }
-);
-
-$("closeScheduleModal")?.addEventListener(
-  "click",
-  closeScheduleModal
 );
 
 $("openTextureModal")?.addEventListener(
@@ -2923,34 +1755,6 @@ $("uploadTexture")?.addEventListener(
           }
         }
       );
-  }
-);
-
-$("saveScheduleConfig")?.addEventListener(
-  "click",
-  () => {
-    saveSessionConfigFromSchedule().catch(
-      error => {
-        if ($("scheduleStatus")) {
-          $("scheduleStatus").textContent =
-            String(error);
-        }
-      }
-    );
-  }
-);
-
-$("saveScheduleAndStart")?.addEventListener(
-  "click",
-  () => {
-    requestSessionStart()
-      .then(closeScheduleModal)
-      .catch(error => {
-        if ($("scheduleStatus")) {
-          $("scheduleStatus").textContent =
-            String(error);
-        }
-      });
   }
 );
 

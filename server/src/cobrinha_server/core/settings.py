@@ -38,10 +38,6 @@ TIKTOK_MONITOR_PID_FILE = (
     RUNS_DIR
     / "tiktok-live-monitor.pid"
 )
-TIKTOK_MONITOR_NETWORK_FILE = (
-    RUNS_DIR
-    / "monitor_network.json"
-)
 TIKTOK_MONITOR_LOG_FILE = (
     LOGS_DIR
     / "tiktok-live-monitor.log"
@@ -54,16 +50,6 @@ TIKTOK_MONITOR_PORT = int(
     os.getenv(
         "COBRINHA_TIKTOK_MONITOR_PORT",
         "2619",
-    )
-)
-TOR_SOCKS_HOST = os.getenv(
-    "COBRINHA_TOR_SOCKS_HOST",
-    "127.0.0.1",
-)
-TOR_SOCKS_PORT = int(
-    os.getenv(
-        "COBRINHA_TOR_SOCKS_PORT",
-        "9050",
     )
 )
 SOCIAL_TEXT_AI_CONFIG_FILE = (
@@ -87,51 +73,22 @@ TEXTURE_MANIFEST_FILE = (
     / "terrain_textures.json"
 )
 
-STREAMLABS_TIKTOK_CONFIG_FILE = (
-    PRIVATE_DIR
-    / "streamlabs_tiktok.json"
-)
 SESSION_CONTROL_CONFIG_FILE = (
     PRIVATE_DIR
     / "live_control.json"
 )
-SESSION_RUNTIME_CONFIG_FILE = (
-    PRIVATE_DIR
-    / "live_runtime.json"
-)
 
-OUTPUT_PRIVATE_CONFIG_FILE = (
-    PRIVATE_DIR
-    / "output.json"
-)
-OUTPUT_PROVIDER_CONFIG_FILE = (
-    PRIVATE_DIR
-    / "output_provider.json"
-)
-OUTPUT_RUNTIME_FILE = (
-    RUNS_DIR
-    / "output_status.json"
-)
-OUTPUT_METRICS_FILE = (
-    RUNS_DIR
-    / "output_metrics.json"
-)
-OUTPUT_LOG_FILE = (
-    LOGS_DIR
-    / "output.log"
-)
-
-OUTPUT_WIDTH = 720
-OUTPUT_HEIGHT = 1280
-OUTPUT_FPS = 30
-OUTPUT_AUDIO_RATE = 48000
-OUTPUT_AUDIO_CHANNELS = 2
-OUTPUT_AUDIO_BITRATE = 160000
-
-DEFAULT_VOICE_PATH = Path(
+PIPER_VOICE_DIR = Path(
     os.getenv(
-        "COBRINHA_VOICE_PATH",
-        str(VOICE_DIR / "default.wav"),
+        "COBRINHA_PIPER_VOICE_DIR",
+        str(VOICE_DIR / "piper"),
+    )
+).expanduser()
+
+DEFAULT_PIPER_VOICE = Path(
+    os.getenv(
+        "COBRINHA_PIPER_VOICE",
+        str(PIPER_VOICE_DIR / "pt_BR-faber-medium.onnx"),
     )
 ).expanduser()
 
@@ -162,11 +119,10 @@ def ensure_runtime_dirs() -> None:
         PRIVATE_DIR,
         ASSETS_DIR,
         VOICE_DIR,
+        PIPER_VOICE_DIR,
         BUILDS_DIR,
         TEXTURE_LIBRARY_DIR,
         ASSETS_DIR / "music" / "background",
-        ASSETS_DIR / "singing" / "originals",
-        ASSETS_DIR / "singing" / "processed",
     ):
         path.mkdir(
             parents=True,

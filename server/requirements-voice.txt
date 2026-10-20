@@ -1,9 +1,3 @@
-# Pilha completa de voz e processamento de musica da distribuicao.
-# Torch e torchaudio sao instalados pelo instalador conforme a GPU.
-coqui-tts>=0.27.4,<0.28
-transformers==5.0.0
-demucs>=4.0.1,<5
-
-# TorchCodec nao faz parte do caminho XTTS usado pela Cobrinha.
-# XTTS carrega speaker WAV por torchaudio; manter TorchCodec fora
-# evita dependencia CUDA 13 incompatível com torch 2.7.1+cu126.
+# Voz local leve com Piper e onnxruntime.
+piper-tts>=1.8,<2
+onnxruntime>=1.17,<2

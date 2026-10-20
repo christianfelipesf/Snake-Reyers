@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from cobrinha_server.core.settings import (
-    DEFAULT_VOICE_PATH,
+    DEFAULT_PIPER_VOICE,
+    PIPER_VOICE_DIR,
     RUNS_DIR,
 )
 from cobrinha_server.services.audio_timeline import (
@@ -19,11 +20,10 @@ from cobrinha_server.services.audio_timeline import (
 )
 
 
-XTTS_MODEL_NAME = "tts_models/multilingual/multi-dataset/xtts_v2"
 PREPARED_AUDIO_DIR = RUNS_DIR / "prepared_audio"
 
-_XTTS_LOCK = threading.Lock()
-_XTTS_MODEL: Any | None = None
+_PIPER_LOCK = threading.Lock()
+_PIPER_VOICES: dict[str, Any] = {}
 
 
 def prepare_tts_input(
@@ -49,8 +49,6 @@ def prepare_tts_input(
         clean
     )
 
-    # O XTTS desta voz pode vocalizar o ponto como palavra.
-    # Igual ao projeto de referencia, ponto de frase vira pausa.
     clean = re.sub(
         r"\.{2,}|…+",
         ", ",
@@ -80,10 +78,6 @@ def prepare_tts_input(
         " ",
         clean,
     ).strip(" ,;:")
-
-    clean = _apply_pt_br_tts_pronunciation(
-        clean
-    )
 
     return unicodedata.normalize(
         "NFC",
@@ -187,58 +181,6 @@ def _restore_common_pt_br_accents(
     )
 
 
-def _apply_pt_br_tts_pronunciation(
-    text: str,
-) -> str:
-    clean = unicodedata.normalize(
-        "NFC",
-        text,
-    )
-
-    # Regras verificadas no Snake Reyers para esta pilha XTTS.
-    replacements = (
-        (r"\bexpli", "espli"),
-        (r"\bexplic", "esplic"),
-        (r"\bexper", "esper"),
-        (r"\bexped", "esped"),
-        (r"\bexpos", "espos"),
-        (r"\bexpress", "espress"),
-        (r"\bexplo", "esplo"),
-        (r"\bexpul", "espul"),
-        (r"\bextra", "estra"),
-        (r"\bextre", "estre"),
-        (r"\bexter", "ester"),
-        (r"\bexces", "esses"),
-        (r"\bexce", "esse"),
-        (r"\bexempl", "ezempl"),
-        (r"\bexat", "ezat"),
-        (r"\bexist", "ezist"),
-        (r"\bexecut", "ezecut"),
-        (r"\bexib", "ezib"),
-        (r"\bexag", "ezag"),
-        (r"\bexam", "ezam"),
-    )
-
-    for pattern, value in replacements:
-        clean = re.sub(
-            pattern,
-            value,
-            clean,
-            flags=re.IGNORECASE,
-        )
-
-    # Correcao fonetica usada no projeto de referencia.
-    clean = clean.replace(
-        "Ç",
-        "SS",
-    ).replace(
-        "ç",
-        "ss",
-    )
-
-    return clean
-
-
 def safe_tts_chunks(
     text: str,
     *,
@@ -305,15 +247,82 @@ def safe_tts_chunks(
     ]
 
 
+def available_voice_paths() -> list[Path]:
+    if not PIPER_VOICE_DIR.is_dir():
+        return []
+
+    voices: list[Path] = []
+
+    for model in sorted(
+        PIPER_VOICE_DIR.glob("*.onnx"),
+        key=lambda item: item.name.casefold(),
+    ):
+        if not model.is_file():
+            continue
+
+        if not Path(
+            f"{model}.json"
+        ).is_file():
+            continue
+
+        voices.append(model)
+
+    return voices
+
+
+def default_voice_path() -> Path | None:
+    configured = Path(
+        DEFAULT_PIPER_VOICE
+    ).expanduser()
+
+    if (
+        configured.is_file()
+        and Path(
+            f"{configured}.json"
+        ).is_file()
+    ):
+        return configured
+
+    voices = available_voice_paths()
+    return voices[0] if voices else None
+
+
 def voice_ready() -> bool:
-    return (
-        DEFAULT_VOICE_PATH.is_file()
-        and DEFAULT_VOICE_PATH.stat().st_size > 1024
+    return default_voice_path() is not None
+
+
+def tts_model_loaded() -> bool:
+    return bool(_PIPER_VOICES)
+
+
+def _resolve_voice_path(
+    voice_path: Path | None,
+) -> Path:
+    candidate = (
+        Path(voice_path).expanduser()
+        if voice_path
+        else None
     )
 
+    if (
+        candidate is not None
+        and candidate.suffix.casefold() == ".onnx"
+        and candidate.is_file()
+        and Path(
+            f"{candidate}.json"
+        ).is_file()
+    ):
+        return candidate
 
-def xtts_model_loaded() -> bool:
-    return _XTTS_MODEL is not None
+    resolved = default_voice_path()
+
+    if resolved is None:
+        raise FileNotFoundError(
+            "Nenhuma voz Piper instalada. Execute "
+            "scripts/prepare_tts_voice.py."
+        )
+
+    return resolved
 
 
 def synthesize_for_job(
@@ -332,14 +341,9 @@ def synthesize_for_job(
             "Texto vazio para sintese."
         )
 
-    resolved_voice = Path(
-        voice_path or DEFAULT_VOICE_PATH
-    ).expanduser()
-
-    if not resolved_voice.is_file():
-        raise FileNotFoundError(
-            f"Voz XTTS nao encontrada: {resolved_voice}"
-        )
+    resolved_voice = _resolve_voice_path(
+        voice_path
+    )
 
     PREPARED_AUDIO_DIR.mkdir(
         parents=True,
@@ -364,7 +368,6 @@ def synthesize_for_job(
             chunk,
             part,
             voice_path=resolved_voice,
-            language=language,
         )
 
         part_paths.append(part)
@@ -421,26 +424,39 @@ def synthesize_for_job(
     }
 
 
-def _load_xtts_model() -> Any:
-    global _XTTS_MODEL
-
-    if _XTTS_MODEL is not None:
-        return _XTTS_MODEL
-
-    import torch
-    from TTS.api import TTS
-
-    device = (
-        "cuda"
-        if torch.cuda.is_available()
-        else "cpu"
+def _load_piper_voice(
+    voice_path: Path,
+) -> Any:
+    key = str(
+        voice_path.resolve()
     )
 
-    _XTTS_MODEL = TTS(
-        model_name=XTTS_MODEL_NAME
-    ).to(device)
+    cached = _PIPER_VOICES.get(key)
 
-    return _XTTS_MODEL
+    if cached is not None:
+        return cached
+
+    from piper import (
+        PiperVoice,
+        SynthesisConfig,
+    )
+
+    voice = PiperVoice.load(
+        str(voice_path)
+    )
+
+    _PIPER_VOICES[key] = (
+        voice,
+        SynthesisConfig(
+            volume=1.0,
+            length_scale=1.0,
+            noise_scale=0.667,
+            noise_w_scale=0.8,
+            normalize_audio=True,
+        ),
+    )
+
+    return _PIPER_VOICES[key]
 
 
 def _synthesize_chunk(
@@ -448,37 +464,36 @@ def _synthesize_chunk(
     output: Path,
     *,
     voice_path: Path,
-    language: str,
 ) -> None:
     output.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    with _XTTS_LOCK:
-        model = _load_xtts_model()
-
-        model.tts_to_file(
-            text=unicodedata.normalize(
-                "NFC",
-                text,
-            ),
-            speaker_wav=[
-                str(voice_path),
-            ],
-            language=str(
-                language or "pt"
-            ),
-            file_path=str(output),
-            split_sentences=True,
+    with _PIPER_LOCK:
+        voice, syn_config = _load_piper_voice(
+            voice_path
         )
+
+        with wave.open(
+            str(output),
+            "wb",
+        ) as wav_file:
+            voice.synthesize_wav(
+                unicodedata.normalize(
+                    "NFC",
+                    text,
+                ),
+                wav_file,
+                syn_config=syn_config,
+            )
 
     if (
         not output.is_file()
         or output.stat().st_size <= 44
     ):
         raise RuntimeError(
-            "XTTS nao produziu WAV valido."
+            "Piper nao produziu WAV valido."
         )
 
 

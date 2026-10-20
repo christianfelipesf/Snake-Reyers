@@ -8,7 +8,6 @@ from cobrinha_server.bridge.godot_bridge import (
 )
 from cobrinha_server.services import (
     godot_runtime_state,
-    song_runtime,
 )
 from cobrinha_server.services.speech_queue import (
     acknowledge_speech_finished,
@@ -64,12 +63,6 @@ async def dispatch_once() -> dict[str, Any]:
         return {
             "sent": False,
             "reason": "speech_active",
-        }
-
-    if song_runtime.singing_active():
-        return {
-            "sent": False,
-            "reason": "song_active",
         }
 
     if godot_runtime_state.heart_me_band_music_showcase_active(

@@ -86,12 +86,6 @@ def _read_state() -> dict[str, Any]:
     comments = payload.get("comments")
     gifts = payload.get("gifts")
     system = payload.get("system")
-    preview_comments = payload.get(
-        "preview_comments"
-    )
-    preview_gifts = payload.get(
-        "preview_gifts"
-    )
 
     return {
         "comments":
@@ -105,20 +99,6 @@ def _read_state() -> dict[str, Any]:
         "system":
             system
             if isinstance(system, list)
-            else [],
-        "preview_comments":
-            preview_comments
-            if isinstance(
-                preview_comments,
-                list,
-            )
-            else [],
-        "preview_gifts":
-            preview_gifts
-            if isinstance(
-                preview_gifts,
-                list,
-            )
             else [],
         "last_event":
             payload.get("last_event")
@@ -175,16 +155,6 @@ def _write_state(
         max_age=SYSTEM_MAX_AGE_SECONDS,
     )[-SOCIAL_EVENTS_LIMIT:]
 
-    state["preview_comments"] = list(
-        state.get("preview_comments")
-        or []
-    )[-SOCIAL_EVENTS_LIMIT:]
-
-    state["preview_gifts"] = list(
-        state.get("preview_gifts")
-        or []
-    )[-SOCIAL_EVENTS_LIMIT:]
-
     state["gift_dedup"] = _prune_gift_dedup(
         dict(state.get("gift_dedup") or {}),
         time.time(),
@@ -207,8 +177,6 @@ def reset() -> None:
                 "comments": [],
                 "gifts": [],
                 "system": [],
-                "preview_comments": [],
-                "preview_gifts": [],
                 "last_event": {},
                 "comment_dedup": {},
                 "gift_dedup": {},
@@ -690,17 +658,6 @@ def push_comment(
         comments.append(event)
         state["comments"] = comments
 
-        preview_comments = list(
-            state.get("preview_comments")
-            or []
-        )
-        preview_comments.append(
-            dict(event)
-        )
-        state["preview_comments"] = (
-            preview_comments
-        )
-
         state["last_event"] = event
         _write_state(state)
 
@@ -853,17 +810,6 @@ def push_gift(
         )
         gifts.append(event)
         state["gifts"] = gifts
-
-        preview_gifts = list(
-            state.get("preview_gifts")
-            or []
-        )
-        preview_gifts.append(
-            dict(event)
-        )
-        state["preview_gifts"] = (
-            preview_gifts
-        )
 
         state["last_event"] = event
         _write_state(state)
@@ -1148,50 +1094,6 @@ def pop_next_gift() -> (
     return event
 
 
-def pop_next_preview_comment() -> (
-    dict[str, Any]
-    | None
-):
-    with _LOCK:
-        state = _read_state()
-
-        comments = list(
-            state.get("preview_comments")
-            or []
-        )
-
-        if not comments:
-            return None
-
-        event = comments.pop(0)
-        state["preview_comments"] = comments
-        _write_state(state)
-
-    return event
-
-
-def pop_next_preview_gift() -> (
-    dict[str, Any]
-    | None
-):
-    with _LOCK:
-        state = _read_state()
-
-        gifts = list(
-            state.get("preview_gifts")
-            or []
-        )
-
-        if not gifts:
-            return None
-
-        event = gifts.pop(0)
-        state["preview_gifts"] = gifts
-        _write_state(state)
-
-    return event
-
-
 def status() -> dict[str, Any]:
     with _LOCK:
         state = _read_state()
@@ -1204,20 +1106,6 @@ def status() -> dict[str, Any]:
         "gifts_pending":
             len(
                 state["gifts"]
-            ),
-        "preview_comments_pending":
-            len(
-                state.get(
-                    "preview_comments"
-                )
-                or []
-            ),
-        "preview_gifts_pending":
-            len(
-                state.get(
-                    "preview_gifts"
-                )
-                or []
             ),
         "system_pending":
             len(

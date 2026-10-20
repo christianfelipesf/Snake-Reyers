@@ -7,7 +7,7 @@ const {
     genericRetryDelayMs,
 } = require('./connectionPolicy');
 
-test('uses Euler retryAfter for signature rate limits', () => {
+test('uses provider retryAfter for rate limits', () => {
     const now = Date.parse('2026-10-20T03:00:00.000Z');
     const policy = connectionFailurePolicy({
         name: 'SignatureRateLimitError',

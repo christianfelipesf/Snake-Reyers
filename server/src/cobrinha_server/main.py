@@ -8,19 +8,15 @@ from fastapi.websockets import WebSocketDisconnect
 
 from cobrinha_server.bridge.godot_bridge import (
     godot_bridge,
-    preview_bridge,
 )
 from cobrinha_server.core.settings import (
     PROJECT_DIR,
     application_version,
     ensure_runtime_dirs,
 )
-from cobrinha_server.routes import build, monitor, output, panel, preview, session, speech, speech_queue, status, textures
+from cobrinha_server.routes import build, monitor, panel, session, speech, speech_queue, status, textures
 from cobrinha_server.services.speech_dispatcher import (
     start_speech_dispatcher,
-)
-from cobrinha_server.services.preview_social_dispatcher import (
-    start_preview_social_dispatcher,
 )
 from cobrinha_server.services.event_decision_worker import (
     start_event_decision_worker,
@@ -34,15 +30,10 @@ from cobrinha_server.services.tts_worker import (
     start_tts_worker,
     stop_tts_worker,
 )
-from cobrinha_server.services.session_scheduler import (
-    start_session_scheduler,
-    stop_session_scheduler,
-)
 from cobrinha_server.services import (
     content_updates,
     live_watchdog,
     music_runtime,
-    song_runtime,
     top_supporters,
 )
 
@@ -70,11 +61,9 @@ def create_app() -> FastAPI:
 
     app.include_router(panel.router)
     app.include_router(status.router)
-    app.include_router(output.router)
     app.include_router(build.router)
     app.include_router(session.router)
     app.include_router(monitor.router)
-    app.include_router(preview.router)
     app.include_router(speech.router)
     app.include_router(speech_queue.router)
     app.include_router(textures.router)
@@ -84,14 +73,11 @@ def create_app() -> FastAPI:
         start_tts_worker()
         start_speech_dispatcher()
         start_event_decision_worker()
-        start_preview_social_dispatcher()
-        start_session_scheduler()
         content_updates.start_startup_sync()
 
     @app.on_event("shutdown")
     async def shutdown_services() -> None:
         content_updates.stop_background_sync()
-        stop_session_scheduler()
         await stop_event_decision_worker()
         stop_tts_worker()
 
@@ -106,10 +92,10 @@ def create_app() -> FastAPI:
             )
             else {}
         )
-        capture = (
-            components.get("capture")
+        game_component = (
+            components.get("game")
             if isinstance(
-                components.get("capture"),
+                components.get("game"),
                 dict,
             )
             else {}
@@ -122,8 +108,8 @@ def create_app() -> FastAPI:
             "live_running": bool(
                 watchdog.get("active")
             ),
-            "transmission_running": bool(
-                capture.get("alive")
+            "game_running": bool(
+                game_component.get("running")
             ),
             "watchdog": {
                 "status": str(
@@ -147,81 +133,6 @@ def create_app() -> FastAPI:
             **godot_bridge.status(),
         }
 
-    @app.websocket("/ws/godot-preview")
-    async def godot_preview_socket(
-        socket: WebSocket,
-    ) -> None:
-        await preview_bridge.connect(
-            socket
-        )
-
-        try:
-            await socket.send_json(
-                {
-                    "type": "server_hello",
-                    "protocol": 1,
-                    "preview": True,
-                }
-            )
-
-            await socket.send_json(
-                music_runtime.websocket_message()
-            )
-
-            await socket.send_json(
-                song_runtime.websocket_message()
-            )
-
-            await socket.send_json(
-                top_supporters.websocket_message()
-            )
-
-            while True:
-                payload = (
-                    await socket.receive_json()
-                )
-
-                if not isinstance(
-                    payload,
-                    dict,
-                ):
-                    continue
-
-                await preview_bridge.remember(
-                    payload
-                )
-
-                message_type = str(
-                    payload.get("type")
-                    or ""
-                )
-
-                # Preview nunca reconhece/consome a fila oficial.
-                if message_type in {
-                    "hello",
-                    "heartbeat",
-                }:
-                    await socket.send_json(
-                        {
-                            "type": (
-                                "hello_ack"
-                                if message_type
-                                == "hello"
-                                else
-                                "heartbeat_ack"
-                            ),
-                            "time": time.time(),
-                            "preview": True,
-                        }
-                    )
-
-        except WebSocketDisconnect:
-            pass
-        finally:
-            await preview_bridge.disconnect(
-                socket
-            )
-
     @app.websocket("/ws/godot")
     async def godot_socket(
         socket: WebSocket,
@@ -238,10 +149,6 @@ def create_app() -> FastAPI:
 
             await socket.send_json(
                 music_runtime.websocket_message()
-            )
-
-            await socket.send_json(
-                song_runtime.websocket_message()
             )
 
             await socket.send_json(
@@ -280,9 +187,6 @@ def create_app() -> FastAPI:
                             )
                             or ""
                         )
-                    if job_id.startswith("song:"):
-                        song_runtime.mark_idle()
-
                     metadata = (
                         current_job.get("metadata")
                         if isinstance(current_job, dict)
@@ -302,9 +206,6 @@ def create_app() -> FastAPI:
                             else metadata.get("manual_sequence_index")
                         ),
                     )
-
-                if message_type == "song_finished":
-                    song_runtime.mark_idle()
 
                 if message_type in {
                     "hello",

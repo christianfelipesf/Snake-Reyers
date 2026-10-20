@@ -34,8 +34,7 @@ CHECK_INTERVAL_SECONDS = max(
 )
 BLOCKED_RETRY_SECONDS = 60
 SUPPORTED_TYPES = {
-    "gift_song": "singing/processed",
-    "background_music": "music/background_processed",
+    "background_music": "music/background",
     "gift_reaction": "content/reactions",
 }
 SUPPORTED_REACTION_ACTIONS = {
@@ -135,18 +134,14 @@ def public_status() -> dict[str, Any]:
 
 def _live_active() -> bool:
     try:
-        from cobrinha_server.services.session_control import status as session_status
-        from cobrinha_server.services.session_real_bridge import public_status as bridge_status
+        from cobrinha_server.services import game_launcher
 
-        session = session_status()
-        bridge = bridge_status()
-        runtime = bridge.get("runtime") if isinstance(bridge, dict) else {}
-        if not isinstance(runtime, dict):
-            runtime = {}
+        state = game_launcher.status()
         active_states = {"starting", "running", "stopping"}
         return (
-            str(session.get("state") or "").lower() in active_states
-            or str(runtime.get("state") or "").lower() in active_states
+            bool(state.get("running"))
+            or str(state.get("state") or "").lower()
+            in active_states
         )
     except Exception:
         return False
@@ -231,14 +226,8 @@ def _normalized_item(raw: object) -> dict[str, Any]:
         "bytes": max(0, int(raw.get("bytes") or 0)),
         "target": target.as_posix(),
         "gift_names": [str(name).strip() for name in gift_names if str(name).strip()],
-        "song_id": str(raw.get("song_id") or "").strip(),
-        "selection": str(raw.get("selection") or "random").strip(),
-        "initial_count": max(1, int(raw.get("initial_count") or 1)),
-        "repeat_count": max(1, int(raw.get("repeat_count") or 10)),
         "action": str(raw.get("action") or "").strip(),
     }
-    if content_type == "gift_song" and (not item["song_id"] or not item["gift_names"]):
-        raise ContentUpdateError(f"Musica {item_id} sem song_id ou presente.")
     if content_type == "gift_reaction" and (
         not item["gift_names"]
         or item["action"] not in SUPPORTED_REACTION_ACTIONS
@@ -323,25 +312,9 @@ def _extract_zip(archive: Path, destination: Path) -> None:
         bundle.extractall(destination)
 
 
-def _register_gift_song(item: dict[str, Any]) -> None:
-    if item["type"] != "gift_song":
-        return
-    from cobrinha_server.services import song_runtime
-
-    for gift_name in item["gift_names"]:
-        song_runtime.update_gift_mapping(
-            gift_name=gift_name,
-            song_id=item["song_id"],
-            append=True,
-            selection=item["selection"],
-            initial_count=item["initial_count"],
-            repeat_count=item["repeat_count"],
-        )
-
-
 def _install_item(item: dict[str, Any]) -> None:
     if _live_active():
-        raise ContentUpdateBlocked("A live iniciou. O conteudo sera instalado depois que ela terminar.")
+        raise ContentUpdateBlocked("O jogo foi aberto. O conteudo sera instalado depois que ele fechar.")
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="content-", dir=WORK_DIR) as temporary_name:
         temporary = Path(temporary_name)
@@ -361,7 +334,6 @@ def _install_item(item: dict[str, Any]) -> None:
             if had_target:
                 os.replace(target, backup)
             os.replace(incoming, target)
-            _register_gift_song(item)
         except Exception:
             if target.exists():
                 shutil.rmtree(target, ignore_errors=True)
@@ -410,7 +382,7 @@ def synchronize(*, install: bool) -> dict[str, Any]:
             _set_status(busy=False)
             return public_status()
         if _live_active():
-            raise ContentUpdateBlocked("Finalize a live antes de instalar novos conteudos.")
+            raise ContentUpdateBlocked("Feche o jogo antes de instalar novos conteudos.")
 
         installed_now: list[str] = []
         for item in available:
@@ -421,7 +393,6 @@ def synchronize(*, install: bool) -> dict[str, Any]:
                 "type": item["type"],
                 "target": item["target"],
                 "gift_names": item["gift_names"],
-                "song_id": item["song_id"],
                 "action": item["action"],
                 "installed_at": time.time(),
             }
@@ -437,7 +408,7 @@ def synchronize(*, install: bool) -> dict[str, Any]:
             available_count=0,
             download_bytes=0,
             phase="installed",
-            message=f"{len(installed_now)} conteudo(s) instalado(s). Disponiveis na proxima live.",
+            message=f"{len(installed_now)} conteudo(s) instalado(s). Disponiveis na proxima abertura do jogo.",
         )
         result = public_status()
         result["installed_now"] = installed_now

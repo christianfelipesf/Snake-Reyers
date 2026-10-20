@@ -109,7 +109,7 @@ class TikTokConnectionWrapper extends EventEmitter {
                         "Cannot read properties of undefined (reading 'status')",
                     )
                 ) {
-                    policy.message = 'Currently unavailable to reconnect. Please change server.';
+                    policy.message = 'Nao foi possivel reconectar agora. Tente novamente.';
                 }
 
                 console.error('Connection error', err);

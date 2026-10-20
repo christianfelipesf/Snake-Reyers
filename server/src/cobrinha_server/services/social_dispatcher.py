@@ -282,7 +282,6 @@ async def dispatch_comment(
         },
         avatar_path=avatar_path,
         source="social_comment",
-        preview=False,
     )
 
     try:

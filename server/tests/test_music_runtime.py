@@ -1,5 +1,3 @@
-import json
-
 from cobrinha_server.services import (
     music_runtime,
 )
@@ -47,7 +45,7 @@ def test_session_start_track_is_randomized_and_persisted(
     )
 
     assert state["enabled"] is True
-    assert state["volume"] == 0.25
+    assert state["volume"] == music_runtime.DEFAULT_VOLUME
     assert state["current_track"] == str(
         second.resolve()
     )
@@ -57,47 +55,29 @@ def test_session_start_track_is_randomized_and_persisted(
     )
 
 
-def test_processed_track_uses_installed_files_when_manifest_paths_are_stale(
+def test_track_entries_ignore_unsupported_files(
     tmp_path,
     monkeypatch,
 ):
-    music_dir = tmp_path / "music" / "background"
-    processed_dir = tmp_path / "music" / "background_processed"
-    song_dir = processed_dir / "minha-musica"
-    music_dir.mkdir(parents=True)
-    song_dir.mkdir(parents=True)
+    music_dir = tmp_path / "music"
+    music_dir.mkdir()
 
-    source = music_dir / "minha-musica.mp3"
+    source = music_dir / "pacote" / "minha-musica.mp3"
+    source.parent.mkdir()
     source.write_bytes(b"source")
-    (song_dir / "vocals.wav").write_bytes(b"voice")
-    (song_dir / "instrumental.wav").write_bytes(b"music")
-    (song_dir / "vocal_timeline.json").write_text("[]", encoding="utf-8")
-    (song_dir / "manifest.json").write_text(
-        json.dumps(
-            {
-                "id": "minha-musica",
-                "title": "Minha Musica",
-                "source_path": "/media/maquina-antiga/minha-musica.mp3",
-                "files": {
-                    "vocal": "/media/maquina-antiga/vocals.wav",
-                    "instrumental": "/media/maquina-antiga/instrumental.wav",
-                    "timeline": "/media/maquina-antiga/vocal_timeline.json",
-                },
-            }
-        ),
+    (music_dir / "notas.txt").write_text(
+        "ignorar",
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(music_runtime, "BACKGROUND_MUSIC_DIR", music_dir)
     monkeypatch.setattr(
         music_runtime,
-        "BACKGROUND_MUSIC_PROCESSED_DIR",
-        processed_dir,
+        "BACKGROUND_MUSIC_DIR",
+        music_dir,
     )
 
     entries = music_runtime.track_entries()
 
     assert len(entries) == 1
-    assert entries[0]["processed"] is True
+    assert entries[0]["processed"] is False
     assert entries[0]["source_path"] == str(source.resolve())
-    assert entries[0]["vocal_path"] == str((song_dir / "vocals.wav").resolve())

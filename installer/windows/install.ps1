@@ -1,5 +1,4 @@
 param(
-    [switch]$AcceptCoquiLicense,
     [switch]$SkipTtsModel,
     [switch]$RepairDistributionOnly
 )
@@ -13,15 +12,12 @@ $MonitorDir = Join-Path $ServerDir "external\tiktok-live-monitoring-server"
 $RuntimeDir = Join-Path $ServerDir "runtime"
 $PythonRuntime = Join-Path $RuntimeDir "python"
 $NodeRuntime = Join-Path $RuntimeDir "node"
-$TorRuntime = Join-Path $RuntimeDir "tor"
 $DownloadDir = Join-Path ([IO.Path]::GetTempPath()) "SnakeReyersInstaller"
 
 $PythonUrl = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe"
 $PythonSha256 = "67b5635e80ea51072b87941312d00ec8927c4db9ba18938f7ad2d27b328b95fb"
 $NodeUrl = "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip"
 $NodeSha256 = "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71"
-$TorUrl = "https://dist.torproject.org/torbrowser/15.0.25/tor-expert-bundle-windows-x86_64-15.0.25.tar.gz"
-$TorSha256 = "c1988c701de2f24f7d098d1d6d7f507b58f27740d097f29c246e0524d639b252"
 $DefaultUpdateManifestUrl = "https://raw.githubusercontent.com/golgol2/Snake-Reyers/main/update-manifest.json"
 
 function Get-VerifiedDownload {
@@ -189,15 +185,15 @@ function Install-AudioPackages {
     $BackgroundReady = @(
         Get-ChildItem -Path (Join-Path $ServerDir "assets\music\background") -File -ErrorAction SilentlyContinue
     ).Count -gt 0
-    $GiftSongReady = @(
-        Get-ChildItem -Path (Join-Path $ServerDir "assets\singing\processed\FANCLUB") -Filter "manifest.json" -File -Recurse -ErrorAction SilentlyContinue
+    $VoiceReady = @(
+        Get-ChildItem -Path (Join-Path $ServerDir "assets\voice\piper") -Filter "*.onnx" -File -ErrorAction SilentlyContinue
     ).Count -gt 0
 
     if (
         (Test-Path $MarkerPath) -and
         ((Get-Content -Raw $MarkerPath).Trim() -eq $ManifestHash) -and
         $BackgroundReady -and
-        $GiftSongReady
+        $VoiceReady
     ) {
         Write-Host "Vozes e musicas ja estao instaladas."
         return
@@ -280,20 +276,6 @@ if (-not (Test-Path $NodeExe)) {
     Copy-Item -Recurse -Force -Path (Join-Path $NodeSource.FullName "*") -Destination $NodeRuntime
 }
 
-$TorExe = Join-Path $TorRuntime "tor\tor.exe"
-if (-not (Test-Path $TorExe)) {
-    $TorArchive = Join-Path $DownloadDir "tor-expert-bundle-windows-x86_64-15.0.25.tar.gz"
-    Get-VerifiedDownload -Url $TorUrl -Destination $TorArchive -Sha256 $TorSha256
-    if (Test-Path $TorRuntime) {
-        Remove-Item -Recurse -Force $TorRuntime
-    }
-    New-Item -ItemType Directory -Force -Path $TorRuntime | Out-Null
-    & tar -xzf $TorArchive -C $TorRuntime
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $TorExe)) {
-        throw "Nao foi possivel extrair o Tor Expert Bundle."
-    }
-}
-
 $NodeMajor = [int](& $NodeExe -p "Number(process.versions.node.split('.')[0])")
 if ($NodeMajor -lt 22) {
     throw "O Node.js local precisa ser versao 22 ou superior."
@@ -308,36 +290,14 @@ if (-not (Test-Path $Python)) {
 Invoke-PipInstall -Arguments @("--upgrade", "pip")
 Invoke-PipInstall -Arguments @("-r", (Join-Path $ServerDir "requirements.txt"))
 
-Write-Host "Instalando o mecanismo XTTS..."
-& $Python -m pip install --disable-pip-version-check `
-    --index-url "https://download.pytorch.org/whl/cu126" `
-    "torch==2.7.1" "torchaudio==2.7.1"
-if ($LASTEXITCODE -ne 0) {
-    Write-Warning "CUDA nao ficou disponivel; instalando o modo CPU do TTS."
-    Invoke-PipInstall -Arguments @(
-        "--index-url", "https://download.pytorch.org/whl/cpu",
-        "torch==2.7.1", "torchaudio==2.7.1"
-    )
-}
+Write-Host "Instalando a voz local leve (Piper)..."
 Invoke-PipInstall -Arguments @("-r", (Join-Path $ServerDir "requirements-voice.txt"))
 
-$env:TTS_HOME = Join-Path $RuntimeDir "tts"
-$TtsModelFile = Join-Path $env:TTS_HOME "tts\tts_models--multilingual--multi-dataset--xtts_v2\model.pth"
-if (-not $SkipTtsModel -and -not (Test-Path $TtsModelFile)) {
-    if (-not $AcceptCoquiLicense) {
-        Write-Host "O XTTS usa a licenca Coqui Public Model License (CPML)."
-        $Answer = Read-Host "Voce aceita a CPML para baixar o modelo XTTS agora? [S/N]"
-        if ($Answer -notmatch "^[SsYy]") {
-            throw "A instalacao completa exige aceitar a licenca do modelo XTTS."
-        }
-    }
-    $env:COQUI_TOS_AGREED = "1"
-    & $Python (Join-Path $ServerDir "scripts\prepare_tts_model.py")
+if (-not $SkipTtsModel) {
+    & $Python (Join-Path $ServerDir "scripts\prepare_tts_voice.py")
     if ($LASTEXITCODE -ne 0) {
-        throw "Nao foi possivel preparar o modelo XTTS."
+        throw "Nao foi possivel preparar as vozes do Piper."
     }
-} elseif (Test-Path $TtsModelFile) {
-    Write-Host "Modelo XTTS ja esta preparado."
 }
 
 Install-AudioPackages
@@ -369,5 +329,5 @@ try {
     Write-Warning "Nao foi possivel criar o atalho: $($_.Exception.Message)"
 }
 
-Write-Host "Snake Reyers instalado com TTS, vozes, musicas, Python, Node.js e Tor locais."
+Write-Host "Snake Reyers instalado com voz Piper, Python e Node.js locais."
 Write-Host "Use o atalho Snake Reyers na Area de Trabalho para iniciar."

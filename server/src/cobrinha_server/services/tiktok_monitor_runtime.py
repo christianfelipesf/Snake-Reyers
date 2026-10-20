@@ -17,8 +17,6 @@ from cobrinha_server.core.settings import (
     TIKTOK_MONITOR_PID_FILE,
     TIKTOK_MONITOR_PORT,
     TIKTOK_MONITOR_LOG_FILE,
-    TOR_SOCKS_HOST,
-    TOR_SOCKS_PORT,
 )
 
 
@@ -66,20 +64,6 @@ def tcp_listening(
         return False
 
 
-def tor_status() -> dict[str, Any]:
-    return {
-        "host": TOR_SOCKS_HOST,
-        "port": TOR_SOCKS_PORT,
-        "socks_listening":
-            tcp_listening(
-                TOR_SOCKS_HOST,
-                TOR_SOCKS_PORT,
-            ),
-        "torsocks_binary":
-            _binary("torsocks"),
-    }
-
-
 def node_source_status() -> dict[str, Any]:
     directory = Path(
         TIKTOK_MONITOR_DIR
@@ -117,8 +101,6 @@ def node_source_status() -> dict[str, Any]:
             _binary("node"),
         "npm_binary":
             _binary("npm"),
-        "torsocks_binary":
-            _binary("torsocks"),
     }
 
 
@@ -148,7 +130,6 @@ def local_server_status() -> dict[str, Any]:
 
 
 def readiness() -> dict[str, Any]:
-    tor = tor_status()
     node = node_source_status()
     local = local_server_status()
 
@@ -166,10 +147,6 @@ def readiness() -> dict[str, Any]:
         node.get("node_modules_exists")
     )
 
-    tor_ready = bool(
-        tor.get("socks_listening")
-    )
-
     return {
         "source_ready":
             source_ready,
@@ -177,15 +154,11 @@ def readiness() -> dict[str, Any]:
             binaries_ready,
         "dependencies_ready":
             dependencies_ready,
-        "tor_ready":
-            tor_ready,
         "ready_to_launch": bool(
             source_ready
             and binaries_ready
             and dependencies_ready
-            and tor_ready
         ),
-        "tor": tor,
         "node": node,
         "local_server": local,
         "auto_start": False,
@@ -214,15 +187,6 @@ def launch_plan() -> dict[str, Any]:
             ),
         ],
         "environment": {
-            "SNAKE_REYERS_REQUIRE_TOR_MONITOR":
-                "1",
-            "SNAKE_REYERS_TOR_PROXY":
-                (
-                    "socks5h://"
-                    + str(TOR_SOCKS_HOST)
-                    + ":"
-                    + str(TOR_SOCKS_PORT)
-                ),
             "TIKTOK_MONITOR_PORT":
                 str(
                     TIKTOK_MONITOR_PORT
@@ -548,17 +512,6 @@ def start_local_node(
             "readiness": state,
         }
 
-    if not state.get(
-        "tor_ready"
-    ):
-        return {
-            "ok": False,
-            "started": False,
-            "reason":
-                "tor_not_ready",
-            "readiness": state,
-        }
-
     plan = launch_plan()
 
     log_path = Path(
@@ -579,16 +532,6 @@ def start_local_node(
         environment[
             str(key)
         ] = str(value)
-
-    environment[
-        "COBRINHA_TIKTOK_MONITOR_WRAPPED"
-    ] = "1"
-
-    environment[
-        "COBRINHA_TIKTOK_MONITOR_DIR"
-    ] = str(
-        TIKTOK_MONITOR_DIR
-    )
 
     with log_path.open(
         "ab",

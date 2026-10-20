@@ -92,7 +92,7 @@ def test_schedule_restart_spawns_helper_and_delays_exit(monkeypatch, tmp_path):
     assert system_updates.public_status()["restart_scheduled"] is True
 
 
-def test_install_endpoint_blocks_active_live(monkeypatch):
+def test_install_endpoint_blocks_open_game(monkeypatch):
     _reset_state()
     monkeypatch.setattr(panel, "_live_runtime_active", lambda: True)
 
@@ -101,4 +101,4 @@ def test_install_endpoint_blocks_active_live(monkeypatch):
 
     assert response.status_code == 409
     assert payload["ok"] is False
-    assert "Finalize a live" in payload["error"]
+    assert "Feche o jogo" in payload["error"]

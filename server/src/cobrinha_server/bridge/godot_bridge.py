@@ -86,7 +86,4 @@ class GodotBridge:
         }
 
 
-# Renderer oficial e Preview nunca compartilham o mesmo socket.
-# Assim o Preview nao substitui a conexao oficial nem consome fala.
 godot_bridge = GodotBridge()
-preview_bridge = GodotBridge()

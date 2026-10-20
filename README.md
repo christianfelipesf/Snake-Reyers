@@ -12,16 +12,14 @@ O projeto combina um jogo 3D, personagens, comentários e presentes da live, res
 - painel local para configurar e acompanhar a live;
 - monitor de comentários e presentes do TikTok;
 - respostas usando a chave da API OpenAI do próprio usuário;
-- vozes locais com Coqui XTTS;
-- músicas, vozes e cantorias instaladas pelos pacotes de áudio;
-- Tor local para o monitor do TikTok no Windows;
-- atualizador do programa e de novos conteúdos com verificação SHA-256;
-- editor de terreno e recursos já incluídos no jogo compilado.
+- vozes locais em português com Piper;
+- música de fundo com controle de volume;
+- atualizador do programa e de novos conteúdos com verificação SHA-256.
 
 ## Instalação rápida no Windows
 
 1. Abra a página de [Releases](https://github.com/golgol2/Snake-Reyers/releases).
-2. Baixe `SnakeReyers-0.1.7-Windows-x64.zip`.
+2. Baixe `SnakeReyers-0.2.0-Windows-x64.zip`.
 3. Extraia o ZIP para uma pasta comum, como `C:\SnakeReyers`.
 4. Abra o PowerShell dentro da pasta extraída.
 5. Execute:
@@ -31,7 +29,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\installer\windows\install.ps1
 ```
 
-Durante a instalação, confirme a licença do modelo Coqui XTTS. O instalador baixa Python, Node.js, Tor, o modelo de voz e os pacotes de áudio verificados. A primeira instalação é demorada e exige bastante espaço livre.
+O instalador prepara cópias locais de Python e Node.js, instala o Piper e baixa as vozes em português e os pacotes de música de fundo verificados. A primeira instalação exige alguns gigabytes livres.
 
 Ao terminar, o instalador cria o atalho **Snake Reyers** na Área de Trabalho. Nas próximas vezes, basta abrir esse atalho: ele inicia o servidor sem mostrar o PowerShell e abre o painel automaticamente.
 
@@ -46,14 +44,14 @@ Quando o painel abrir em `http://127.0.0.1:9393`:
 5. no TikTok LIVE Studio, adicione a janela **Snake Reyers** como captura de jogo ou de janela;
 6. confirme imagem e som antes de iniciar a transmissão.
 
-O Windows reproduz o áudio diretamente pelo jogo. Não é necessário usar o pipeline GStreamer nessa versão.
+O áudio sai pelo próprio jogo. A captura e a transmissão ficam por conta do TikTok LIVE Studio.
 
 ## Instalação rápida no Linux
 
-Requisitos: Python 3, Node.js 22 ou superior, npm, Tor, GStreamer e os plugins utilizados pela transmissão.
+Requisitos: Python 3 com suporte a `venv`, Node.js 22 ou superior, npm e um ambiente gráfico com display ativo.
 
 ```bash
-tar -xzf SnakeReyers-0.1.7-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.2.0-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh
 ./installer/linux/install.sh
@@ -65,27 +63,26 @@ O tutorial completo, incluindo solução de problemas, está em [docs/INSTALACAO
 
 ## Atualizações automáticas
 
-A partir da versão `0.1.1`, o launcher procura uma versão nova do programa antes de abrir o painel. Desde a versão `0.1.5`, o botão **Atualizar sistema** também permite verificar, baixar, instalar e reiniciar o Snake Reyers sem usar comandos. A instalação fica bloqueada enquanto uma live estiver ativa.
+A partir da versão `0.1.1`, o launcher procura uma versão nova do programa antes de abrir o painel. Desde a versão `0.1.5`, o botão **Atualizar sistema** também permite verificar, baixar, instalar e reiniciar o Snake Reyers sem usar comandos. A instalação fica bloqueada enquanto o jogo estiver aberto.
 
-O painel também possui a área **Atualizações de conteúdo**, que procura músicas e reações publicadas separadamente.
+O painel também possui a área **Atualizações de conteúdo**, que procura músicas de fundo e reações publicadas separadamente.
 
 A partir da versão `0.1.6`, a instalação e as atualizações também criam ou reparam o atalho **Snake Reyers** na Área de Trabalho.
 
-Conteúdos novos são baixados individualmente, têm o SHA-256 conferido e só são instalados com a live parada. A configuração, os áudios já instalados e os dados privados do usuário são preservados. Consulte [docs/CONTEUDO.md](docs/CONTEUDO.md) para conhecer o formato do catálogo.
+Conteúdos novos são baixados individualmente, têm o SHA-256 conferido e só são instalados com o jogo fechado. A configuração, os áudios já instalados e os dados privados do usuário são preservados. Consulte [docs/CONTEUDO.md](docs/CONTEUDO.md) para conhecer o formato do catálogo.
 
 ## Antes de instalar
 
 - Use Windows 10/11 ou uma distribuição Linux 64 bits.
-- Reserve pelo menos 20 GB livres para dependências, modelo de voz e áudios.
+- Reserve pelo menos 5 GB livres para dependências, vozes e áudios.
 - Tenha acesso a lives no TikTok e, no Windows, o TikTok LIVE Studio instalado.
 - Crie sua própria chave da API OpenAI. Nenhuma chave do criador acompanha o projeto.
-- Leia e aceite a licença do Coqui XTTS somente se concordar com seus termos.
 
 ## Privacidade e segurança
 
-Chaves, cookies, sessões, credenciais de transmissão e configurações privadas ficam somente no computador do usuário, dentro de `server/private`, e são ignorados pelo Git.
+Chaves, cookies, sessões e configurações privadas ficam somente no computador do usuário, dentro de `server/private`, e são ignorados pelo Git.
 
-O painel e os serviços locais escutam em `127.0.0.1`. Nunca publique a pasta `server/private` nem compartilhe sua chave da API OpenAI ou sua chave de transmissão.
+O painel e os serviços locais escutam em `127.0.0.1`. Nunca publique a pasta `server/private` nem compartilhe sua chave da API OpenAI.
 
 ## Comunidade
 
@@ -113,4 +110,4 @@ Este projeto é **source available**, não código aberto. Ao baixar, instalar o
 
 ## Aviso
 
-Snake Reyers é um projeto independente e não possui vínculo oficial com TikTok, OpenAI, Coqui, Godot ou Streamlabs. O uso das plataformas e APIs depende dos termos e das permissões de cada serviço.
+Snake Reyers é um projeto independente e não possui vínculo oficial com TikTok, OpenAI, Godot ou qualquer outro serviço. O uso das plataformas e APIs depende dos termos e das permissões de cada serviço.

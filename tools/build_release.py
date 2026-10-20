@@ -30,12 +30,9 @@ REUSED_AUDIO_MANIFEST = os.getenv(
     "SNAKE_REYERS_AUDIO_MANIFEST",
     "",
 ).strip()
-AUDIO_PACK_TARGET_BYTES = 1_500_000_000
 AUDIO_CORE_DIRS = (
     Path("voice"),
     Path("music/background"),
-    Path("singing"),
-    Path("songs"),
 )
 SKIP_PARTS = {
     ".git",
@@ -220,28 +217,13 @@ def _audio_groups() -> list[list[Path]]:
     for relative in AUDIO_CORE_DIRS:
         core.extend(_asset_files(AUDIO_SOURCE / relative))
 
-    processed_root = AUDIO_SOURCE / "music" / "background_processed"
-    groups: list[list[Path]] = [sorted(set(core))]
-    current: list[Path] = []
-    current_size = 0
+    files = sorted(set(core))
+    if not files:
+        raise FileNotFoundError(
+            f"Nenhum arquivo de audio encontrado em: {AUDIO_SOURCE}"
+        )
 
-    for song_dir in sorted(
-        (path for path in processed_root.iterdir() if path.is_dir()),
-        key=lambda path: path.name.casefold(),
-    ):
-        files = _asset_files(song_dir)
-        size = sum(path.stat().st_size for path in files)
-        if current and current_size + size > AUDIO_PACK_TARGET_BYTES:
-            groups.append(current)
-            current = []
-            current_size = 0
-        current.extend(files)
-        current_size += size
-
-    if current:
-        groups.append(current)
-
-    return [group for group in groups if group]
+    return [files]
 
 
 def _audio_archives(

@@ -24,35 +24,10 @@ python3 -m venv "${SERVER_DIR}/.venv"
 "${SERVER_DIR}/.venv/bin/python" -m pip install -r "${SERVER_DIR}/requirements.txt"
 
 PYTHON="${SERVER_DIR}/.venv/bin/python"
-if command -v nvidia-smi >/dev/null 2>&1; then
-	if ! "${PYTHON}" -m pip install \
-		--index-url https://download.pytorch.org/whl/cu126 \
-		torch==2.7.1 torchaudio==2.7.1; then
-		"${PYTHON}" -m pip install \
-			--index-url https://download.pytorch.org/whl/cpu \
-			torch==2.7.1 torchaudio==2.7.1
-	fi
-else
-	"${PYTHON}" -m pip install \
-		--index-url https://download.pytorch.org/whl/cpu \
-		torch==2.7.1 torchaudio==2.7.1
-fi
 "${PYTHON}" -m pip install -r "${SERVER_DIR}/requirements-voice.txt"
 
-export TTS_HOME="${SERVER_DIR}/runtime/tts"
-TTS_MODEL_FILE="${TTS_HOME}/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth"
-if [[ "${SNAKE_REYERS_SKIP_TTS_MODEL:-0}" != "1" ]] && [[ ! -f "${TTS_MODEL_FILE}" ]]; then
-	if [[ "${SNAKE_REYERS_ACCEPT_COQUI_LICENSE:-0}" != "1" ]]; then
-		printf '%s\n' "O XTTS usa a Coqui Public Model License (CPML)."
-		read -r -p "Voce aceita a CPML para baixar o modelo XTTS agora? [S/N] " answer
-		if [[ ! "${answer}" =~ ^[SsYy]$ ]]; then
-			echo "A instalacao completa exige aceitar a licenca do modelo XTTS." >&2
-			exit 3
-		fi
-	fi
-	COQUI_TOS_AGREED=1 "${PYTHON}" "${SERVER_DIR}/scripts/prepare_tts_model.py"
-elif [[ -f "${TTS_MODEL_FILE}" ]]; then
-	echo "Modelo XTTS ja esta preparado."
+if [[ "${SNAKE_REYERS_SKIP_TTS_MODEL:-0}" != "1" ]]; then
+	"${PYTHON}" "${SERVER_DIR}/scripts/prepare_tts_voice.py"
 fi
 
 install_audio_packages() {

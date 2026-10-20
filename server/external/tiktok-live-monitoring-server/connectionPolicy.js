@@ -38,9 +38,10 @@ function connectionFailurePolicy(error, nowMs = Date.now()) {
     const message = errorText(error);
     const code = errorCode(error, message);
     const rateLimited = (
-        error?.name === 'SignatureRateLimitError'
+        error?.status === 429
+        || error?.statusCode === 429
         || error?.reason === 'Rate Limited'
-        || /SignatureRateLimitError|Rate Limited|rate_limit_/i.test(message)
+        || /rate[ _-]?limit|too many requests|status code 429|signatureratelimiterror/i.test(message)
     );
 
     if (!rateLimited) {
@@ -56,7 +57,7 @@ function connectionFailurePolicy(error, nowMs = Date.now()) {
 
     return {
         rateLimited: true,
-        code: code || 'signature_rate_limit',
+        code: code || 'rate_limit',
         message,
         retryDelayMs,
         retryAfterSeconds: Math.max(1, Math.ceil(retryDelayMs / 1000)),

@@ -5,7 +5,6 @@ from typing import Any
 from cobrinha_server.services import (
     event_decision_worker,
     live_events,
-    song_runtime,
     top_supporters,
     tts_worker,
 )
@@ -23,8 +22,6 @@ def reset_live_transient_state(
 
     reset_speech_queues()
     live_events.reset()
-    song_runtime.reset_gift_progress()
-    song_runtime.mark_idle()
     top_supporters.reset()
     worker = event_decision_worker.reset_transient_state(
         reason=clean_reason,
@@ -38,10 +35,6 @@ def reset_live_transient_state(
         "reason": clean_reason,
         "speech_queue": speech_queue_status(),
         "events": live_events.status(),
-        "song": {
-            "gift_progress": song_runtime.gift_trigger_status(),
-            "singing_active": song_runtime.singing_active(),
-        },
         "top_supporters": top_supporters.status(),
         "event_decision_worker": worker,
         "tts_worker": tts,

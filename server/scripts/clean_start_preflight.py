@@ -163,20 +163,6 @@ def _is_backend(
     )
 
 
-def _is_preview(
-    cwd: Path | None,
-    argv: tuple[str, ...],
-) -> bool:
-    return (
-        cwd == GAME_DIR
-        and "--cobrinha-preview"
-        in argv
-        and bool(argv)
-        and "godot"
-        in Path(argv[0]).name.casefold()
-    )
-
-
 def _is_official_game(
     cwd: Path | None,
     argv: tuple[str, ...],
@@ -232,25 +218,6 @@ def _is_monitor_node(
     }:
         node_index = 0
 
-    elif executable in {
-        "torsocks",
-    }:
-        for index, item in enumerate(
-            argv[1:4],
-            1,
-        ):
-            if (
-                Path(item)
-                .name
-                .casefold()
-                in {
-                    "node",
-                    "nodejs",
-                }
-            ):
-                node_index = index
-                break
-
     if node_index is None:
         return False
 
@@ -267,92 +234,6 @@ def _is_monitor_node(
     return entry == MONITOR_ENTRY
 
 
-def _is_capture(
-    cwd: Path | None,
-    argv: tuple[str, ...],
-) -> bool:
-    if (
-        cwd != SERVER_DIR
-        or not argv
-    ):
-        return False
-
-    executable = (
-        Path(argv[0])
-        .name
-        .casefold()
-    )
-
-    if executable != "gst-launch-1.0":
-        return False
-
-    args = {
-        str(item).strip().casefold()
-        for item in argv[1:]
-    }
-
-    has_ximagesrc = (
-        "ximagesrc"
-        in args
-    )
-
-    has_pulsesrc = (
-        "pulsesrc"
-        in args
-    )
-
-    has_flvmux = (
-        "flvmux"
-        in args
-    )
-
-    has_video_shape = any(
-        item.startswith(
-            "video/x-raw,"
-        )
-        and "width=720" in item
-        and "height=1280" in item
-        and "framerate=30/1"
-        in item
-        for item in args
-    )
-
-    has_audio_shape = any(
-        item.startswith(
-            "audio/x-raw,"
-        )
-        and "rate=48000" in item
-        and "channels=2" in item
-        for item in args
-    )
-
-    has_sink = (
-        "rtmp2sink" in args
-        or "rtmpsink" in args
-    )
-
-    return (
-        has_ximagesrc
-        and has_pulsesrc
-        and has_flvmux
-        and has_video_shape
-        and has_audio_shape
-        and has_sink
-    )
-
-
-def _is_display(
-    cwd: Path | None,
-    argv: tuple[str, ...],
-) -> bool:
-    return (
-        cwd == SERVER_DIR
-        and bool(argv)
-        and Path(argv[0]).name
-        == "Xephyr"
-    )
-
-
 def classify(
     cwd: Path | None,
     argv: tuple[str, ...],
@@ -362,12 +243,6 @@ def classify(
         argv,
     ):
         return "backend"
-
-    if _is_preview(
-        cwd,
-        argv,
-    ):
-        return "preview"
 
     if _is_official_game(
         cwd,
@@ -380,18 +255,6 @@ def classify(
         argv,
     ):
         return "monitor_node"
-
-    if _is_capture(
-        cwd,
-        argv,
-    ):
-        return "capture"
-
-    if _is_display(
-        cwd,
-        argv,
-    ):
-        return "display"
 
     return ""
 
@@ -617,17 +480,6 @@ def self_test() -> None:
                 "--path",
                 str(GAME_DIR),
                 "--",
-                "--cobrinha-preview",
-            ),
-            "preview",
-        ),
-        (
-            GAME_DIR,
-            (
-                "godot",
-                "--path",
-                str(GAME_DIR),
-                "--",
                 "--cobrinha-live",
             ),
             "official_game",
@@ -653,111 +505,6 @@ def self_test() -> None:
                 str(MONITOR_ENTRY),
             ),
             "monitor_node",
-        ),
-        (
-            MONITOR_DIR,
-            (
-                "torsocks",
-                "node",
-                str(MONITOR_ENTRY),
-            ),
-            "monitor_node",
-        ),
-        (
-            SERVER_DIR,
-            (
-                "gst-launch-1.0",
-                "-e",
-                "ximagesrc",
-                "display-name=:99",
-                "remote=true",
-                "use-damage=false",
-                "show-pointer=false",
-                "!",
-                "videoconvert",
-                "!",
-                "videoscale",
-                "!",
-                "videorate",
-                "!",
-                (
-                    "video/x-raw,"
-                    "width=720,"
-                    "height=1280,"
-                    "framerate=30/1"
-                ),
-                "!",
-                "x264enc",
-                "bitrate=2500",
-                "!",
-                "h264parse",
-                "!",
-                "queue",
-                "!",
-                "mux.",
-                "pulsesrc",
-                "device=cobrinha_test.monitor",
-                "!",
-                "audioconvert",
-                "!",
-                "audioresample",
-                "!",
-                "audiorate",
-                "!",
-                (
-                    "audio/x-raw,"
-                    "rate=48000,"
-                    "channels=2"
-                ),
-                "!",
-                "voaacenc",
-                "bitrate=160000",
-                "!",
-                "queue",
-                "!",
-                "mux.",
-                "flvmux",
-                "name=mux",
-                "streamable=true",
-                "!",
-                "queue",
-                "!",
-                "rtmp2sink",
-                "location=<REDACTED>",
-                "sync=true",
-            ),
-            "capture",
-        ),
-        (
-            SERVER_DIR,
-            (
-                "bash",
-                "-lc",
-                (
-                    "grep gst_html_capture_pipeline "
-                    "gst-launch-1.0 ximagesrc "
-                    "pulsesrc flvmux rtmp2sink"
-                ),
-            ),
-            "",
-        ),
-        (
-            SERVER_DIR,
-            (
-                "gst-launch-1.0",
-                "videotestsrc",
-                "!",
-                "fakesink",
-            ),
-            "",
-        ),
-        (
-            SERVER_DIR,
-            (
-                "Xephyr",
-                ":99",
-            ),
-            "display",
         ),
         (
             SERVER_DIR,
