@@ -26,6 +26,10 @@ AUDIO_ORIGIN = Path(
         str(ROOT.parent / "source-assets-unavailable"),
     )
 ).resolve()
+REUSED_AUDIO_MANIFEST = os.getenv(
+    "SNAKE_REYERS_AUDIO_MANIFEST",
+    "",
+).strip()
 AUDIO_PACK_TARGET_BYTES = 1_500_000_000
 AUDIO_CORE_DIRS = (
     Path("voice"),
@@ -243,6 +247,26 @@ def _audio_groups() -> list[list[Path]]:
 def _audio_archives(
     version: str,
 ) -> tuple[list[Path], dict[str, object]]:
+    if REUSED_AUDIO_MANIFEST:
+        manifest_path = Path(REUSED_AUDIO_MANIFEST).expanduser().resolve()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        packs = manifest.get("packs") if isinstance(manifest, dict) else None
+        if not isinstance(packs, list) or not packs:
+            raise ValueError(
+                f"Manifesto de audio reutilizado invalido: {manifest_path}"
+            )
+        for pack in packs:
+            if (
+                not isinstance(pack, dict)
+                or not str(pack.get("name", "")).endswith(".zip")
+                or len(str(pack.get("sha256", ""))) != 64
+                or not str(pack.get("url", "")).startswith("https://")
+            ):
+                raise ValueError(
+                    f"Pacote invalido no manifesto reutilizado: {manifest_path}"
+                )
+        return [], manifest
+
     release_base = os.getenv(
         "SNAKE_REYERS_RELEASE_BASE_URL",
         (

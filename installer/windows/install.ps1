@@ -1,6 +1,7 @@
 param(
     [switch]$AcceptCoquiLicense,
-    [switch]$SkipTtsModel
+    [switch]$SkipTtsModel,
+    [switch]$RepairDistributionOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,6 +22,7 @@ $NodeUrl = "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip"
 $NodeSha256 = "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71"
 $TorUrl = "https://dist.torproject.org/torbrowser/15.0.25/tor-expert-bundle-windows-x86_64-15.0.25.tar.gz"
 $TorSha256 = "c1988c701de2f24f7d098d1d6d7f507b58f27740d097f29c246e0524d639b252"
+$DefaultUpdateManifestUrl = "https://raw.githubusercontent.com/golgol2/Snake-Reyers/main/update-manifest.json"
 
 function Get-VerifiedDownload {
     param(
@@ -44,6 +46,84 @@ function Get-VerifiedDownload {
         Remove-Item -Force $Destination
         throw "Falha de integridade no download de $Url"
     }
+}
+
+function Repair-DistributionPayload {
+    $RequiredFiles = @(
+        (Join-Path $RootDir "game\windows\SnakeReyers.exe"),
+        (Join-Path $ServerDir "assets\audio-manifest.json")
+    )
+    $MissingFiles = @(
+        $RequiredFiles | Where-Object { -not (Test-Path $_ -PathType Leaf) }
+    )
+    if ($MissingFiles.Count -eq 0) {
+        return
+    }
+
+    Write-Warning "O pacote baixado esta incompleto (normalmente Code > Download ZIP)."
+    Write-Host "Baixando o pacote oficial completo do Snake Reyers..."
+
+    $ManifestUrl = if ($env:SNAKE_REYERS_UPDATE_MANIFEST_URL) {
+        $env:SNAKE_REYERS_UPDATE_MANIFEST_URL
+    } else {
+        $DefaultUpdateManifestUrl
+    }
+    if (-not $ManifestUrl.StartsWith("https://")) {
+        throw "O manifesto oficial precisa usar HTTPS: $ManifestUrl"
+    }
+
+    $BootstrapDir = Join-Path $DownloadDir "distribution-repair"
+    $ManifestPath = Join-Path $BootstrapDir "update-manifest.json"
+    $ExtractDir = Join-Path $BootstrapDir "extracted"
+    New-Item -ItemType Directory -Force -Path $BootstrapDir | Out-Null
+    Invoke-WebRequest -UseBasicParsing -Uri $ManifestUrl -OutFile $ManifestPath
+    $Manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
+    $Package = $Manifest.packages.'windows-x86_64'
+    if (-not $Package) {
+        throw "O manifesto oficial nao possui um pacote para Windows x64."
+    }
+
+    $PackageUrl = [string]$Package.url
+    $PackageHash = ([string]$Package.sha256).ToLowerInvariant()
+    if (
+        -not $PackageUrl.StartsWith("https://") -or
+        $PackageHash -notmatch "^[0-9a-f]{64}$"
+    ) {
+        throw "Os dados do pacote Windows no manifesto oficial sao invalidos."
+    }
+
+    $Archive = Join-Path $BootstrapDir "SnakeReyers-Windows-x64.zip"
+    Get-VerifiedDownload -Url $PackageUrl -Destination $Archive -Sha256 $PackageHash
+    if (Test-Path $ExtractDir) {
+        Remove-Item -Recurse -Force $ExtractDir
+    }
+    Expand-Archive -Force -Path $Archive -DestinationPath $ExtractDir
+
+    $SourceRoot = Join-Path $ExtractDir "SnakeReyers"
+    $SourceGame = Join-Path $SourceRoot "game\windows\SnakeReyers.exe"
+    $SourceAudioManifest = Join-Path $SourceRoot "server\assets\audio-manifest.json"
+    if (
+        -not (Test-Path $SourceGame -PathType Leaf) -or
+        -not (Test-Path $SourceAudioManifest -PathType Leaf)
+    ) {
+        throw "O pacote oficial nao contem todos os arquivos obrigatorios."
+    }
+
+    Get-ChildItem -Path $SourceRoot -Recurse -File -Force | ForEach-Object {
+        $RelativePath = $_.FullName.Substring($SourceRoot.Length).TrimStart([char]'\')
+        $Destination = Join-Path $RootDir $RelativePath
+        New-Item -ItemType Directory -Force -Path (Split-Path $Destination -Parent) | Out-Null
+        Copy-Item -Force -Path $_.FullName -Destination $Destination
+    }
+
+    $StillMissing = @(
+        $RequiredFiles | Where-Object { -not (Test-Path $_ -PathType Leaf) }
+    )
+    if ($StillMissing.Count -gt 0) {
+        throw "Nao foi possivel reparar o pacote incompleto: $($StillMissing -join ', ')"
+    }
+
+    Write-Host "Pacote oficial recuperado e validado com sucesso."
 }
 
 function Invoke-PipInstall {
@@ -101,6 +181,11 @@ function Install-AudioPackages {
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 New-Item -ItemType Directory -Force -Path $RuntimeDir, $DownloadDir | Out-Null
+Repair-DistributionPayload
+if ($RepairDistributionOnly) {
+    Write-Host "Arquivos obrigatorios da distribuicao estao prontos."
+    exit 0
+}
 
 $PythonExe = Join-Path $PythonRuntime "python.exe"
 if (-not (Test-Path $PythonExe)) {

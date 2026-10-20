@@ -21,7 +21,7 @@ O projeto combina um jogo 3D, personagens, comentários e presentes da live, res
 ## Instalação rápida no Windows
 
 1. Abra a página de [Releases](https://github.com/golgol2/Snake-Reyers/releases).
-2. Baixe `SnakeReyers-0.1.1-Windows-x64.zip`.
+2. Baixe `SnakeReyers-0.1.2-Windows-x64.zip`.
 3. Extraia o ZIP para uma pasta comum, como `C:\SnakeReyers`.
 4. Abra o PowerShell dentro da pasta extraída.
 5. Execute:
@@ -33,6 +33,8 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 Durante a instalação, confirme a licença do modelo Coqui XTTS. O instalador baixa Python, Node.js, Tor, o modelo de voz e os pacotes de áudio verificados. A primeira instalação é demorada e exige bastante espaço livre.
+
+Use o arquivo da página **Releases**, e não a opção **Code > Download ZIP**. A partir da versão `0.1.2`, o instalador também reconhece automaticamente um ZIP de código-fonte incompleto e recupera o pacote oficial, com verificação SHA-256.
 
 Quando o painel abrir em `http://127.0.0.1:9393`:
 
@@ -50,7 +52,7 @@ O Windows reproduz o áudio diretamente pelo jogo. Não é necessário usar o pi
 Requisitos: Python 3, Node.js 22 ou superior, npm, Tor, GStreamer e os plugins utilizados pela transmissão.
 
 ```bash
-tar -xzf SnakeReyers-0.1.1-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.1.2-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh launcher/start_linux.sh
 ./installer/linux/install.sh

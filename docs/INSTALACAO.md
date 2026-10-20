@@ -10,6 +10,8 @@ Ao baixar, instalar ou executar o sistema, o usuário aceita a [Licença Snake R
 
 Abra a [Release mais recente](https://github.com/golgol2/Snake-Reyers/releases/latest) e baixe o arquivo com `Windows-x64` no nome.
 
+Não use o botão **Code > Download ZIP** como pacote de instalação: esse ZIP é apenas o código-fonte público e não inclui o jogo compilado. Se isso acontecer, a versão `0.1.2` ou superior do instalador detecta os arquivos ausentes e recupera automaticamente o pacote oficial, verificando seu SHA-256.
+
 O instalador baixa automaticamente os pacotes de áudio. Se preferir baixá-los manualmente, coloque todos os arquivos `SnakeReyers-*-Audio-*.zip` ao lado do ZIP principal antes de extrair.
 
 ### 2. Extrair
@@ -79,7 +81,7 @@ Instale previamente Python 3 com suporte a `venv`, Node.js 22+, npm, Tor, GStrea
 Depois de baixar a Release Linux:
 
 ```bash
-tar -xzf SnakeReyers-0.1.1-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.1.2-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh launcher/start_linux.sh
 ./installer/linux/install.sh
@@ -94,18 +96,18 @@ SNAKE_REYERS_ACCEPT_COQUI_LICENSE=1 ./installer/linux/install.sh
 
 ## Verificar os downloads
 
-Compare o SHA-256 com `SnakeReyers-0.1.1-checksums.json` publicado na Release.
+Compare o SHA-256 com `SnakeReyers-0.1.2-checksums.json` publicado na Release.
 
 Windows:
 
 ```powershell
-Get-FileHash .\SnakeReyers-0.1.1-Windows-x64.zip -Algorithm SHA256
+Get-FileHash .\SnakeReyers-0.1.2-Windows-x64.zip -Algorithm SHA256
 ```
 
 Linux:
 
 ```bash
-sha256sum SnakeReyers-0.1.1-Linux-x64.tar.gz
+sha256sum SnakeReyers-0.1.2-Linux-x64.tar.gz
 ```
 
 ## Problemas comuns

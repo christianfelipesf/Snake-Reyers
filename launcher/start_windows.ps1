@@ -39,6 +39,17 @@ if (
 if (-not (Test-Path $TorExe)) {
     throw "Tor local ausente. Execute novamente installer\windows\install.ps1."
 }
+$RequiredPayload = @(
+    (Join-Path $RootDir "game\windows\SnakeReyers.exe"),
+    (Join-Path $ServerDir "assets\audio-manifest.json"),
+    (Join-Path $ServerDir "assets\.audio-package-version")
+)
+$MissingPayload = @(
+    $RequiredPayload | Where-Object { -not (Test-Path $_ -PathType Leaf) }
+)
+if ($MissingPayload.Count -gt 0) {
+    throw "Instalacao incompleta. Execute novamente installer\windows\install.ps1."
+}
 
 New-Item -ItemType Directory -Force -Path $LogDir, $TorDataDir | Out-Null
 $env:PATH = "$NodeDir;$env:PATH"
