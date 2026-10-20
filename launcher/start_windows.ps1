@@ -39,7 +39,7 @@ if (
     -not (Test-Path $PythonWindowless) -or
     -not (Test-Path (Join-Path $NodeDir "node.exe"))
 ) {
-    throw "Execute installer\windows\install.ps1 primeiro."
+    throw "Execute o INSTALAR.cmd da pasta principal primeiro."
 }
 $RequiredPayload = @(
     (Join-Path $RootDir "game\windows\SnakeReyers.exe"),
@@ -50,7 +50,7 @@ $MissingPayload = @(
     $RequiredPayload | Where-Object { -not (Test-Path $_ -PathType Leaf) }
 )
 if ($MissingPayload.Count -gt 0) {
-    throw "Instalacao incompleta. Execute novamente installer\windows\install.ps1."
+    throw "Instalacao incompleta. Execute novamente o INSTALAR.cmd da pasta principal."
 }
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null

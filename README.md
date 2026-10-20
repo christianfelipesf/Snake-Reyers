@@ -45,21 +45,19 @@ montar toda a estrutura do zero.
 1. Abra a página de [Releases](https://github.com/golgol2/Snake-Reyers/releases).
 2. Baixe `SnakeReyers-0.2.0-Windows-x64.zip`.
 3. Extraia o ZIP para uma pasta comum, como `C:\SnakeReyers`.
-4. Abra o PowerShell dentro da pasta extraída.
-5. Execute:
+4. Dê **dois cliques em `INSTALAR.cmd`** na pasta extraída.
 
-   ```powershell
-   Set-ExecutionPolicy -Scope Process Bypass
-   .\installer\windows\install.ps1
-   ```
-
-O instalador prepara cópias locais de Python e Node.js, instala o Piper e baixa as vozes em
-português e os pacotes de música de fundo verificados. A primeira instalação exige alguns
-gigabytes livres.
+É só isso: o instalador abre, mostra o progresso e prepara cópias locais de Python e Node.js,
+instala a voz em português e baixa os pacotes de música de fundo verificados. A primeira
+instalação exige alguns gigabytes livres e você não precisa digitar comando nenhum.
 
 Ao terminar, o instalador cria o atalho **Snake Reyers Lite** na Área de Trabalho. Nas próximas
 vezes, basta abrir esse atalho: ele inicia o servidor sem mostrar o PowerShell e abre o painel
 automaticamente.
+
+> [!TIP]
+> Prefere a linha de comando? O caminho antigo continua valendo:
+> `powershell -ExecutionPolicy Bypass -File .\installer\windows\install.ps1`.
 
 > [!IMPORTANT]
 > Use o arquivo da página **Releases**, e não a opção **Code → Download ZIP**. A partir da versão
@@ -86,12 +84,40 @@ display ativo.
 ```bash
 tar -xzf SnakeReyers-0.2.0-Linux-x64.tar.gz
 cd SnakeReyers
-chmod +x installer/linux/install.sh
-./installer/linux/install.sh
+./INSTALAR.sh
 ```
 
 Ao terminar, use o atalho **Snake Reyers Lite** criado na Área de Trabalho. O painel será aberto em
 `http://127.0.0.1:9393`.
+
+## 📥 O que o instalador baixa da web
+
+O Snake Reyers Lite é leve: as peças abaixo não acompanham o ZIP e são buscadas por HTTPS, com
+verificação de SHA-256 sempre que existe um hash oficial.
+
+| Download | Origem | Quando |
+| --- | --- | --- |
+| Python 3.12 (cópia local) | python.org | só no Windows, na primeira instalação |
+| Node.js 22 (cópia local) | nodejs.org | só no Windows, na primeira instalação |
+| Pacotes Python (FastAPI, Piper, etc.) | PyPI | na primeira instalação |
+| Dependências do monitor TikTok | npm registry | na primeira instalação |
+| Vozes Piper em português (Faber, Cadu, Jeff) | Hugging Face (rhasspy/piper-voices) | na primeira instalação |
+| Músicas de fundo e reações | anexos da Release no GitHub | quando o manifesto de áudio pede |
+| Atualizações do programa | GitHub Releases | ao abrir, se houver versão nova |
+| Conteúdos novos (músicas, reações) | anexos no GitHub | quando o catálogo de conteúdo indica |
+
+Observações importantes:
+
+- O Snake Reyers Lite **não instala Torch**. A voz local usa Piper (leve). Se o instalador estiver
+  baixando `torch`, a pasta foi sobrescrita por uma versão antiga; veja a nota abaixo.
+- Quando a pasta é uma cópia do código-fonte, o instalador tenta buscar o jogo compilado e o áudio
+  na Release. Ele **nunca rebaixa** para uma versão mais antiga: se a Release publicada for anterior
+  à sua, o pacote é ignorado e um aviso aparece.
+- No Linux, o Python, o Node.js e o npm precisam já estar instalados no sistema; o instalador não
+  os baixa.
+- Nenhuma chave ou dado privado sai do computador: elas ficam em `server/private`.
+- As respostas com IA usam a **sua** chave da OpenAI (`api.openai.com`) e os custos ficam na sua
+  conta. O monitor da live conversa com o TikTok para ler comentários e presentes.
 
 O tutorial completo, incluindo solução de problemas, está em [docs/INSTALACAO.md](docs/INSTALACAO.md).
 

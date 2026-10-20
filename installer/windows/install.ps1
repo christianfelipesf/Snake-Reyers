@@ -87,6 +87,72 @@ function Get-VerifiedDownload {
     }
 }
 
+function Compare-Version {
+    param(
+        [string]$Published,
+        [string]$Installed
+    )
+
+    $PublishedVersion = $null
+    $InstalledVersion = $null
+    if (-not [System.Version]::TryParse(([string]$Published).Trim().TrimStart([char[]]"vV"), [ref]$PublishedVersion)) {
+        return 0
+    }
+    if (-not [System.Version]::TryParse(([string]$Installed).Trim().TrimStart([char[]]"vV"), [ref]$InstalledVersion)) {
+        return 0
+    }
+    return $PublishedVersion.CompareTo($InstalledVersion)
+}
+
+function Test-Python312 {
+    param([string]$Executable)
+
+    if (-not $Executable -or -not (Test-Path $Executable -PathType Leaf)) {
+        return $false
+    }
+
+    try {
+        $Version = & $Executable -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>$null
+        return (
+            $LASTEXITCODE -eq 0 -and
+            ([string]$Version).Trim() -eq "3.12"
+        )
+    } catch {
+        return $false
+    }
+}
+
+function Find-Python312 {
+    $Candidates = [System.Collections.Generic.List[string]]::new()
+    $RegistryKeys = @(
+        "HKCU:\Software\Python\PythonCore\3.12\InstallPath",
+        "HKLM:\Software\Python\PythonCore\3.12\InstallPath",
+        "HKLM:\Software\WOW6432Node\Python\PythonCore\3.12\InstallPath"
+    )
+    foreach ($Key in $RegistryKeys) {
+        if (Test-Path $Key) {
+            $Value = [string](Get-ItemProperty -Path $Key -ErrorAction SilentlyContinue).'(default)'
+            if ($Value) {
+                $Candidates.Add($Value)
+            }
+        }
+    }
+    if ($env:LocalAppData) {
+        $Candidates.Add((Join-Path $env:LocalAppData "Programs\Python\Python312"))
+    }
+    if ($env:ProgramFiles) {
+        $Candidates.Add((Join-Path $env:ProgramFiles "Python312"))
+    }
+
+    foreach ($Candidate in $Candidates) {
+        $Executable = Join-Path ([string]$Candidate).TrimEnd([char]'\', [char]'/') "python.exe"
+        if (Test-Python312 $Executable) {
+            return $Executable
+        }
+    }
+    return $null
+}
+
 function Repair-DistributionPayload {
     $RequiredFiles = @(
         (Join-Path $RootDir "game\windows\SnakeReyers.exe"),
@@ -117,6 +183,21 @@ function Repair-DistributionPayload {
     New-Item -ItemType Directory -Force -Path $BootstrapDir | Out-Null
     Invoke-WebRequest -UseBasicParsing -Uri $ManifestUrl -OutFile $ManifestPath
     $Manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
+
+    $LocalVersionFile = Join-Path $RootDir "VERSION"
+    $LocalVersion = if (Test-Path $LocalVersionFile -PathType Leaf) {
+        (Get-Content -Raw $LocalVersionFile).Trim()
+    } else {
+        "0.0.0"
+    }
+    $PublishedVersion = [string]$Manifest.version
+    if ((Compare-Version -Published $PublishedVersion -Installed $LocalVersion) -lt 0) {
+        Write-Warning "A versao publicada ($PublishedVersion) e mais antiga que a que esta instalada aqui ($LocalVersion)."
+        Write-Warning "Para nao rebaixar o seu Snake Reyers Lite, o pacote oficial nao sera aplicado por cima desta pasta."
+        Write-Warning "Publique uma release $LocalVersion (com o jogo compilado e o audio-manifest.json) ou coloque esses arquivos manualmente."
+        return
+    }
+
     $Package = $Manifest.packages.'windows-x86_64'
     if (-not $Package) {
         throw "O manifesto oficial nao possui um pacote para Windows x64."
@@ -177,7 +258,10 @@ function Invoke-PipInstall {
 function Install-AudioPackages {
     $ManifestPath = Join-Path $ServerDir "assets\audio-manifest.json"
     if (-not (Test-Path $ManifestPath)) {
-        throw "Manifesto dos pacotes de audio ausente: $ManifestPath"
+        Write-Warning "Manifesto dos pacotes de audio ausente: $ManifestPath"
+        Write-Warning "As musicas de fundo e as vozes compartilhadas nao serao instaladas agora."
+        Write-Warning "Elas chegam quando existir uma release compativel ou quando o arquivo for colocado manualmente."
+        return
     }
 
     $ManifestHash = (Get-FileHash -Algorithm SHA256 -Path $ManifestPath).Hash.ToLowerInvariant()
@@ -229,6 +313,10 @@ function Install-AudioPackages {
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 New-Item -ItemType Directory -Force -Path $RuntimeDir, $DownloadDir | Out-Null
+
+$env:COBRINHA_SERVER_DIR = $ServerDir
+$env:PYTHONPATH = Join-Path $ServerDir "src"
+
 Repair-DistributionPayload
 if ($RepairDistributionOnly) {
     Write-Host "Arquivos obrigatorios da distribuicao estao prontos."
@@ -251,8 +339,30 @@ if (-not (Test-Path $PythonExe)) {
         "PrependPath=0",
         "TargetDir=`"$PythonRuntime`""
     )
-    if ($PythonInstall.ExitCode -ne 0 -or -not (Test-Path $PythonExe)) {
-        throw "Nao foi possivel instalar o Python portatil. Codigo: $($PythonInstall.ExitCode)"
+    if (
+        $PythonInstall.ExitCode -ne 0 -or
+        -not (Test-Path $PythonExe)
+    ) {
+        $FallbackPython = Find-Python312
+        if ($FallbackPython) {
+            $FallbackRoot = Split-Path $FallbackPython -Parent
+            Write-Warning "O instalador oficial pulou o Python (ja existe uma instalacao 3.12 registrada no Windows)."
+            Write-Host "Reaproveitando o Python 3.12 encontrado em: $FallbackRoot"
+            $SameLocation = (
+                [IO.Path]::GetFullPath($FallbackRoot).TrimEnd('\') -eq
+                [IO.Path]::GetFullPath($PythonRuntime).TrimEnd('\')
+            )
+            if (-not $SameLocation) {
+                if (Test-Path $PythonRuntime) {
+                    Remove-Item -Recurse -Force $PythonRuntime
+                }
+                New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
+                Copy-Item -Recurse -Force -Path (Join-Path $FallbackRoot "*") -Destination $PythonRuntime
+            }
+        }
+    }
+    if (-not (Test-Path $PythonExe)) {
+        throw "Nao foi possivel preparar o Python 3.12 local. Instale o Python 3.12 (com venv) e execute novamente."
     }
 }
 

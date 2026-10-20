@@ -26,6 +26,9 @@ python3 -m venv "${SERVER_DIR}/.venv"
 PYTHON="${SERVER_DIR}/.venv/bin/python"
 "${PYTHON}" -m pip install -r "${SERVER_DIR}/requirements-voice.txt"
 
+export COBRINHA_SERVER_DIR="${SERVER_DIR}"
+export PYTHONPATH="${SERVER_DIR}/src"
+
 if [[ "${SNAKE_REYERS_SKIP_TTS_MODEL:-0}" != "1" ]]; then
 	"${PYTHON}" "${SERVER_DIR}/scripts/prepare_tts_voice.py"
 fi
@@ -37,7 +40,8 @@ install_audio_packages() {
 
 	[[ -f "${manifest}" ]] || {
 		echo "Manifesto dos pacotes de audio ausente: ${manifest}" >&2
-		exit 4
+		echo "As musicas de fundo nao serao instaladas agora." >&2
+		return 0
 	}
 
 	manifest_hash="$(sha256sum "${manifest}" | awk '{print $1}')"

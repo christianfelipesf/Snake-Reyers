@@ -10,7 +10,7 @@ if [[ -x "${ROOT_DIR}/launcher/create_shortcut_linux.sh" ]]; then
 fi
 
 if [[ ! -x "${PYTHON}" ]]; then
-	echo "Execute installer/linux/install.sh primeiro." >&2
+	echo "Execute ./INSTALAR.sh primeiro." >&2
 	exit 2
 fi
 
