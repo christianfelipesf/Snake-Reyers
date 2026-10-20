@@ -57,3 +57,11 @@ def test_update_preserves_private_data(tmp_path, monkeypatch):
     assert (root / "VERSION").read_text(encoding="utf-8").strip() == "1.1.0"
     assert (root / "server" / "app.txt").read_text(encoding="utf-8") == "new"
     assert (private / "keep.txt").read_text(encoding="utf-8") == "local"
+
+
+def test_default_update_manifest_is_configured(monkeypatch, tmp_path):
+    updater = _load_updater()
+    monkeypatch.delenv("SNAKE_REYERS_UPDATE_MANIFEST_URL", raising=False)
+    monkeypatch.setattr(updater, "PRIVATE_CONFIG_FILE", tmp_path / "missing.json")
+
+    assert updater._manifest_url() == updater.DEFAULT_MANIFEST_URL

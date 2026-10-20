@@ -22,6 +22,10 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 VERSION_FILE = ROOT_DIR / "VERSION"
 PRIVATE_CONFIG_FILE = ROOT_DIR / "server" / "private" / "update.json"
 UPDATES_DIR = ROOT_DIR / "updates"
+DEFAULT_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/golgol2/"
+    "Snake-Reyers/main/update-manifest.json"
+)
 PROTECTED_PREFIXES = (
     ".git",
     "updates",
@@ -65,7 +69,10 @@ def _manifest_url(explicit: str = "") -> str:
     environment = os.getenv("SNAKE_REYERS_UPDATE_MANIFEST_URL", "").strip()
     if environment:
         return environment
-    return str(_read_json(PRIVATE_CONFIG_FILE).get("manifest_url") or "").strip()
+    return str(
+        _read_json(PRIVATE_CONFIG_FILE).get("manifest_url")
+        or DEFAULT_MANIFEST_URL
+    ).strip()
 
 
 def _open_url(url: str, timeout: float = 20.0):

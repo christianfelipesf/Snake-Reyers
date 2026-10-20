@@ -2044,6 +2044,99 @@ function formatCleanupBytes(value) {
   return `${bytes.toFixed(unit === 0 ? 0 : 2)} ${units[unit]}`;
 }
 
+function renderContentUpdates(payload) {
+  const badge = $("contentUpdateBadge");
+  const result = $("contentUpdateResult");
+  const checkButton = $("contentCheck");
+  const installButton = $("contentInstall");
+  const autoInstall = $("contentAutoInstall");
+  const available = Number(payload?.available_count || 0);
+  const busy = Boolean(payload?.busy);
+  const hasError = Boolean(payload?.last_error);
+
+  if ($("contentInstalledCount")) {
+    $("contentInstalledCount").textContent = String(payload?.installed_count || 0);
+  }
+  if ($("contentAvailableCount")) {
+    $("contentAvailableCount").textContent = String(available);
+  }
+  if ($("contentDownloadSize")) {
+    $("contentDownloadSize").textContent = formatCleanupBytes(payload?.download_bytes);
+  }
+  if (autoInstall && document.activeElement !== autoInstall) {
+    autoInstall.checked = Boolean(payload?.configuration?.auto_install);
+  }
+  if (checkButton) {
+    checkButton.disabled = busy;
+    checkButton.textContent = busy ? "Verificando..." : "Procurar novidades";
+  }
+  if (installButton) {
+    installButton.disabled = busy || available < 1 || Boolean(payload?.live_active);
+    installButton.textContent = busy ? "Processando..." : "Baixar e instalar";
+  }
+  if (badge) {
+    badge.className = "content-update-badge";
+    if (hasError) {
+      badge.textContent = "Atenção";
+      badge.classList.add("has-error");
+    } else if (busy) {
+      badge.textContent = "Processando";
+    } else if (available > 0) {
+      badge.textContent = `${available} novidade${available === 1 ? "" : "s"}`;
+      badge.classList.add("has-updates");
+    } else {
+      badge.textContent = payload?.checked_at ? "Atualizado" : "Aguardando";
+    }
+  }
+  if (result) {
+    const lines = [payload?.message || "Catálogo ainda não consultado."];
+    const items = Array.isArray(payload?.available) ? payload.available : [];
+    items.forEach(item => {
+      lines.push(`- ${item.title || item.id} · versão ${item.version} · ${formatCleanupBytes(item.bytes)}`);
+    });
+    if (payload?.live_active && available > 0) {
+      lines.push("A instalação aguardará a live terminar.");
+    }
+    result.textContent = lines.join("\n");
+  }
+}
+
+async function loadContentUpdates() {
+  const response = await fetch("/api/content-updates", { cache: "no-store" });
+  const payload = await response.json();
+  renderContentUpdates(payload);
+  return payload;
+}
+
+async function runContentUpdate(action) {
+  const response = await fetch(`/api/content-updates/${action}`, { method: "POST" });
+  const payload = await response.json();
+  renderContentUpdates(payload);
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.error || `HTTP ${response.status}`);
+  }
+  return payload;
+}
+
+async function saveContentUpdateSettings() {
+  const response = await fetch(
+    "/api/content-updates/settings",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        auto_install: Boolean($("contentAutoInstall")?.checked)
+      })
+    }
+  );
+  const payload = await response.json();
+  renderContentUpdates(payload);
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.error || `HTTP ${response.status}`);
+  }
+  return payload;
+}
+
 function renderCleanupResult(payload) {
   const target = $("cleanupResult");
   if (!target) return;
@@ -2138,6 +2231,36 @@ $("cleanupRun")?.addEventListener(
   () => {
     runCleanup().catch(error => {
       const target = $("cleanupResult");
+      if (target) target.textContent = String(error);
+    });
+  }
+);
+
+$("contentCheck")?.addEventListener(
+  "click",
+  () => {
+    runContentUpdate("check").catch(error => {
+      const target = $("contentUpdateResult");
+      if (target) target.textContent = String(error);
+    });
+  }
+);
+
+$("contentInstall")?.addEventListener(
+  "click",
+  () => {
+    runContentUpdate("install").catch(error => {
+      const target = $("contentUpdateResult");
+      if (target) target.textContent = String(error);
+    });
+  }
+);
+
+$("contentAutoInstall")?.addEventListener(
+  "change",
+  () => {
+    saveContentUpdateSettings().catch(error => {
+      const target = $("contentUpdateResult");
       if (target) target.textContent = String(error);
     });
   }
@@ -2728,6 +2851,13 @@ refreshBuildStatus().catch(
       result.textContent =
         String(error);
     }
+  }
+);
+
+loadContentUpdates().catch(
+  error => {
+    const result = $("contentUpdateResult");
+    if (result) result.textContent = String(error);
   }
 );
 

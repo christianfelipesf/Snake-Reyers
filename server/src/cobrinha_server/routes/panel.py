@@ -23,6 +23,7 @@ from cobrinha_server.core.settings import (
     PROJECT_DIR,
 )
 from cobrinha_server.services import (
+    content_updates,
     music_runtime,
     runtime_cleanup,
     song_runtime,
@@ -70,6 +71,88 @@ def _cleanup_block_reason() -> str:
         return "Aguarde o processamento da música terminar."
 
     return ""
+
+
+@router.get(
+    "/api/content-updates",
+    response_class=JSONResponse,
+)
+def api_content_updates_status() -> JSONResponse:
+    return JSONResponse(content_updates.public_status())
+
+
+@router.post(
+    "/api/content-updates/check",
+    response_class=JSONResponse,
+)
+async def api_content_updates_check() -> JSONResponse:
+    try:
+        result = await run_in_threadpool(
+            content_updates.synchronize,
+            install=False,
+        )
+    except content_updates.ContentUpdateBusy as exc:
+        return JSONResponse(
+            {**content_updates.public_status(), "ok": False, "error": str(exc)},
+            status_code=409,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {**content_updates.public_status(), "ok": False, "error": str(exc)},
+            status_code=502,
+        )
+    return JSONResponse(result)
+
+
+@router.post(
+    "/api/content-updates/install",
+    response_class=JSONResponse,
+)
+async def api_content_updates_install() -> JSONResponse:
+    try:
+        result = await run_in_threadpool(
+            content_updates.synchronize,
+            install=True,
+        )
+    except (
+        content_updates.ContentUpdateBusy,
+        content_updates.ContentUpdateBlocked,
+    ) as exc:
+        return JSONResponse(
+            {**content_updates.public_status(), "ok": False, "error": str(exc)},
+            status_code=409,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {**content_updates.public_status(), "ok": False, "error": str(exc)},
+            status_code=502,
+        )
+    return JSONResponse(result)
+
+
+@router.post(
+    "/api/content-updates/settings",
+    response_class=JSONResponse,
+)
+async def api_content_updates_settings(
+    request: Request,
+) -> JSONResponse:
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    configuration = content_updates.update_configuration(
+        auto_install=payload.get("auto_install", True),
+    )
+    return JSONResponse(
+        {
+            **content_updates.public_status(),
+            "ok": True,
+            "configuration": configuration,
+        }
+    )
 
 
 @router.get(

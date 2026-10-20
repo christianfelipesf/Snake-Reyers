@@ -12,6 +12,7 @@ from cobrinha_server.bridge.godot_bridge import (
 )
 from cobrinha_server.core.settings import (
     PROJECT_DIR,
+    application_version,
     ensure_runtime_dirs,
 )
 from cobrinha_server.routes import build, monitor, output, panel, preview, session, speech, speech_queue, status, textures
@@ -38,6 +39,7 @@ from cobrinha_server.services.session_scheduler import (
     stop_session_scheduler,
 )
 from cobrinha_server.services import (
+    content_updates,
     live_watchdog,
     music_runtime,
     song_runtime,
@@ -50,7 +52,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Cobrinha Live Server",
-        version="0.1.0",
+        version=application_version(),
     )
 
     app.mount(
@@ -84,9 +86,11 @@ def create_app() -> FastAPI:
         start_event_decision_worker()
         start_preview_social_dispatcher()
         start_session_scheduler()
+        content_updates.start_startup_sync()
 
     @app.on_event("shutdown")
     async def shutdown_services() -> None:
+        content_updates.stop_background_sync()
         stop_session_scheduler()
         await stop_event_decision_worker()
         stop_tts_worker()

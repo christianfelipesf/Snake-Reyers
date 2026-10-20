@@ -59,6 +59,8 @@ def _include(path: Path, platform_name: str) -> bool:
         return False
     if relative.as_posix() == "server/assets/audio-manifest.json":
         return False
+    if relative.as_posix() == "update-manifest.json":
+        return False
     if relative.parts[:2] == ("game", "windows"):
         return platform_name == "windows"
     if relative.parts[:2] == ("game", "linux"):

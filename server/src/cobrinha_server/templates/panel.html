@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Cobrinha Live Server</title>
-  <link rel="stylesheet" href="/static/css/panel.css?v=4">
+  <link rel="stylesheet" href="/static/css/panel.css?v=5">
 </head>
 <body>
   <main class="shell">
@@ -99,6 +99,48 @@
       </div>
 
       <pre id="cleanupResult">Limpeza ainda não consultada.</pre>
+    </section>
+
+    <section class="card content-update-card" style="margin-top:14px">
+      <div class="content-update-head">
+        <div>
+          <h2>Atualizações de conteúdo</h2>
+          <p>
+            Procura músicas e reações novas no catálogo oficial. Os arquivos
+            são verificados e só entram no sistema com a live parada.
+          </p>
+        </div>
+        <span id="contentUpdateBadge" class="content-update-badge">Aguardando</span>
+      </div>
+
+      <div class="content-update-summary">
+        <div>
+          <strong>Instalados</strong>
+          <span id="contentInstalledCount">0</span>
+        </div>
+        <div>
+          <strong>Novidades</strong>
+          <span id="contentAvailableCount">0</span>
+        </div>
+        <div>
+          <strong>Download</strong>
+          <span id="contentDownloadSize">0 B</span>
+        </div>
+      </div>
+
+      <label class="checkline content-auto-setting">
+        <input id="contentAutoInstall" type="checkbox" checked>
+        Baixar automaticamente quando a live estiver parada
+      </label>
+
+      <div class="row">
+        <button id="contentCheck" type="button">Procurar novidades</button>
+        <button id="contentInstall" class="live-toggle" type="button" disabled>
+          Baixar e instalar
+        </button>
+      </div>
+
+      <pre id="contentUpdateResult">Catálogo ainda não consultado.</pre>
     </section>
 
     <section class="card" style="margin-top:14px">
@@ -550,6 +592,6 @@
     </form>
   </dialog>
 
-  <script src="/static/js/panel.js?v=14"></script>
+  <script src="/static/js/panel.js?v=15"></script>
 </body>
 </html>

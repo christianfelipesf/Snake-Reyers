@@ -12,6 +12,7 @@ from cobrinha_server.bridge.godot_bridge import godot_bridge
 from cobrinha_server.core.json_store import read_json, write_json_atomic
 from cobrinha_server.core.settings import RUNS_DIR
 from cobrinha_server.services import (
+    content_updates,
     godot_runtime_state,
     live_events,
     song_runtime,
@@ -774,6 +775,24 @@ async def _process_comment(event: dict[str, Any]) -> dict[str, Any]:
 
 
 async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
+    incoming_metadata = (
+        event.get("metadata")
+        if isinstance(event.get("metadata"), dict)
+        else {}
+    )
+    configured_reaction = content_updates.reaction_for_gift_name(
+        incoming_metadata.get("gift_name")
+        or event.get("text")
+        or ""
+    )
+    configured_action = str(
+        (configured_reaction or {}).get("action")
+        or ""
+    )
+    if configured_action == "gift_cannon":
+        incoming_metadata["cannon_only"] = True
+        event["metadata"] = incoming_metadata
+
     avatar_path = await _send_spectator_activity(event, source="social_gift")
     await godot_bridge.send(gift_apples_message(event))
 
@@ -805,7 +824,10 @@ async def _process_gift(event: dict[str, Any]) -> dict[str, Any]:
         event,
         song_trigger,
     )
-    heart_me_band = _is_heart_me_band_gift_key(gift_key)
+    heart_me_band = (
+        _is_heart_me_band_gift_key(gift_key)
+        or configured_action == "heart_me_band"
+    )
     heart_me_payload: dict[str, Any] = {}
     if heart_me_band:
         heart_me_payload = _heart_me_band_user_payload(

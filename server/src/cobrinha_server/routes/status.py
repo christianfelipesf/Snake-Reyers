@@ -33,6 +33,7 @@ from cobrinha_server.services.speech_queue import (
 from cobrinha_server.core.settings import (
     ASSETS_DIR,
     PROJECT_DIR,
+    application_version,
 )
 
 
@@ -134,7 +135,7 @@ def server_status() -> dict[str, Any]:
     return {
         "ok": True,
         "service": "cobrinha-live-server",
-        "version": "0.1.0",
+        "version": application_version(),
         "time": time.time(),
         "godot": godot_bridge.status(),
         "preview": {

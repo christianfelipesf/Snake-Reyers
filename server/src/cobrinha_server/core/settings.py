@@ -146,6 +146,14 @@ DEFAULT_PORT = int(
 )
 
 
+def application_version() -> str:
+    version_file = PROJECT_DIR.parent / "VERSION"
+    try:
+        return version_file.read_text(encoding="utf-8").strip() or "0.0.0"
+    except OSError:
+        return "0.0.0"
+
+
 def ensure_runtime_dirs() -> None:
     for path in (
         RUNS_DIR,

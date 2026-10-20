@@ -902,6 +902,9 @@ def update_gift_mapping(
     gift_name: object,
     song_id: object,
     append: bool = True,
+    selection: object = "",
+    initial_count: object = None,
+    repeat_count: object = None,
 ) -> dict[str, Any]:
     gift_key = _canonical_gift_key(
         gift_name
@@ -954,6 +957,15 @@ def update_gift_mapping(
         ):
             selection_rule["selection"] = "random"
 
+        requested_selection = str(
+            selection or ""
+        ).strip().lower()
+        if requested_selection in {
+            "random",
+            "first",
+        }:
+            selection_rule["selection"] = requested_selection
+
         rules[gift_key] = {
             "song_id": song_ids[0],
             "song_ids": song_ids,
@@ -962,14 +974,18 @@ def update_gift_mapping(
                 song_ids,
             ),
             "initial_count": _clean_trigger_count(
-                previous.get(
-                    "initial_count",
+                (
+                    initial_count
+                    if initial_count is not None
+                    else previous.get("initial_count")
                 ),
                 DEFAULT_GIFT_INITIAL_SING_COUNT,
             ),
             "repeat_count": _clean_trigger_count(
-                previous.get(
-                    "repeat_count",
+                (
+                    repeat_count
+                    if repeat_count is not None
+                    else previous.get("repeat_count")
                 ),
                 DEFAULT_GIFT_REPEAT_SING_COUNT,
             ),
