@@ -271,7 +271,7 @@ def check_and_update(manifest_url: str, install: bool) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Atualizador do Snake Reyers")
+    parser = argparse.ArgumentParser(description="Atualizador do Snake Reyers Lite")
     parser.add_argument("--manifest", default="")
     parser.add_argument("--install", action="store_true")
     arguments = parser.parse_args()

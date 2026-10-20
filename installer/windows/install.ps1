@@ -100,7 +100,7 @@ function Repair-DistributionPayload {
     }
 
     Write-Warning "O pacote baixado esta incompleto (normalmente Code > Download ZIP)."
-    Write-Host "Baixando o pacote oficial completo do Snake Reyers..."
+    Write-Host "Baixando o pacote oficial completo do Snake Reyers Lite..."
 
     $ManifestUrl = if ($env:SNAKE_REYERS_UPDATE_MANIFEST_URL) {
         $env:SNAKE_REYERS_UPDATE_MANIFEST_URL
@@ -329,5 +329,5 @@ try {
     Write-Warning "Nao foi possivel criar o atalho: $($_.Exception.Message)"
 }
 
-Write-Host "Snake Reyers instalado com voz Piper, Python e Node.js locais."
-Write-Host "Use o atalho Snake Reyers na Area de Trabalho para iniciar."
+Write-Host "Snake Reyers Lite instalado com voz Piper, Python e Node.js locais."
+Write-Host "Use o atalho Snake Reyers Lite na Area de Trabalho para iniciar."

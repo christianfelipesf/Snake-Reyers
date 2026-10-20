@@ -2,7 +2,7 @@
 
 ## Versao 0.2.0
 
-Esta versao deixa o Snake Reyers mais leve e generico:
+Esta versao deixa o Snake Reyers Lite mais leve e generico:
 
 - a voz local agora usa Piper, sem dependencias pesadas ou clone de voz;
 - o monitor do TikTok funciona direto, com proxy e assinatura opcionais;
@@ -49,8 +49,8 @@ O pacote e instalado somente quando a versao e mais nova e o SHA-256 coincide co
 
 A partir da versao `0.1.5`, abra o painel e use **Atualizar sistema**. O painel verifica a versao, baixa o pacote correspondente ao sistema operacional, valida o SHA-256, instala os arquivos e reinicia automaticamente. Para evitar interrupcoes, a instalacao so e liberada quando o jogo esta fechado.
 
-Quem estiver em uma versao anterior a `0.1.5` precisa iniciar o Snake Reyers uma vez pelo launcher para receber esse botao. Depois disso, as proximas versoes podem ser instaladas diretamente pelo painel.
+Quem estiver em uma versao anterior a `0.1.5` precisa iniciar o Snake Reyers Lite uma vez pelo launcher para receber esse botao. Depois disso, as proximas versoes podem ser instaladas diretamente pelo painel.
 
-A partir da versao `0.1.6`, a instalacao e as atualizacoes criam ou reparam o atalho **Snake Reyers** na Area de Trabalho. No Windows, o atalho inicia o servidor sem exibir a janela do PowerShell.
+A partir da versao `0.1.6`, a instalacao e as atualizacoes criam ou reparam o atalho **Snake Reyers Lite** na Area de Trabalho. No Windows, o atalho inicia o servidor sem exibir a janela do PowerShell.
 
 As musicas de fundo e reacoes usam um catalogo independente em `content-manifest.json`. Essa verificacao aparece no painel e nunca instala arquivos enquanto o jogo esta aberto.

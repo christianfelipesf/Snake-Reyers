@@ -42,7 +42,7 @@ def create_app() -> FastAPI:
     ensure_runtime_dirs()
 
     app = FastAPI(
-        title="Cobrinha Live Server",
+        title="Snake Reyers Lite",
         version=application_version(),
     )
 

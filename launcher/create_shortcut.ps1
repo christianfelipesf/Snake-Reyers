@@ -25,7 +25,13 @@ if ([string]::IsNullOrWhiteSpace($DesktopDir)) {
 }
 
 New-Item -ItemType Directory -Force -Path $DesktopDir | Out-Null
-$ShortcutPath = Join-Path $DesktopDir "Snake Reyers.lnk"
+
+$LegacyShortcut = Join-Path $DesktopDir "Snake Reyers.lnk"
+if (Test-Path $LegacyShortcut -PathType Leaf) {
+    Remove-Item -LiteralPath $LegacyShortcut -Force -ErrorAction SilentlyContinue
+}
+
+$ShortcutPath = Join-Path $DesktopDir "Snake Reyers Lite.lnk"
 $WScript = Join-Path $env:SystemRoot "System32\wscript.exe"
 $Shell = New-Object -ComObject WScript.Shell
 $Shortcut = $Shell.CreateShortcut($ShortcutPath)
@@ -33,7 +39,7 @@ $Shortcut.TargetPath = $WScript
 $Shortcut.Arguments = "`"$Launcher`""
 $Shortcut.WorkingDirectory = $RootDir
 $Shortcut.IconLocation = "$GameExe,0"
-$Shortcut.Description = "Iniciar o Snake Reyers e abrir o painel"
+$Shortcut.Description = "Iniciar o Snake Reyers Lite e abrir o painel"
 $Shortcut.Save()
 
 Write-Host "Atalho criado na Area de Trabalho: $ShortcutPath"

@@ -83,7 +83,7 @@ def _start(root: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reiniciador do Snake Reyers")
+    parser = argparse.ArgumentParser(description="Reiniciador do Snake Reyers Lite")
     parser.add_argument("--wait-pid", type=int, required=True)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--port", type=int, default=9393)

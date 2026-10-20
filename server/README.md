@@ -1,6 +1,6 @@
-# Servidor Snake Reyers
+# Servidor Snake Reyers Lite
 
-Backend local do jogo Snake Reyers.
+Backend local do jogo Snake Reyers Lite.
 
 Ele fornece o painel web, monitor da live, filas de eventos, geracao de fala, musica e comunicacao WebSocket com a build compilada do jogo.
 

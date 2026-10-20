@@ -429,7 +429,7 @@ pre { min-height: 160px; white-space: pre-wrap; overflow: auto; }
   .camera-slider-controls input[type="number"] { width: 80px; }
 }
 
-/* Ajustes especificos do painel Snake Reyers. */
+/* Ajustes especificos do painel Snake Reyers Lite. */
 .cobrinha-status-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -1,6 +1,6 @@
 # Atualizacoes de conteudo
 
-O Snake Reyers consulta o catalogo oficial em:
+O Snake Reyers Lite consulta o catalogo oficial em:
 
 ```text
 https://raw.githubusercontent.com/golgol2/Snake-Reyers/main/content-manifest.json

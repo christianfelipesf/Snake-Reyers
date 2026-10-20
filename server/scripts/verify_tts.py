@@ -14,7 +14,7 @@ def main() -> int:
         raise SystemExit("A voz padrao nao esta instalada.")
 
     result = synthesize_for_job(
-        "O sistema de voz do Snake Reyers esta funcionando.",
+        "O sistema de voz do Snake Reyers Lite esta funcionando.",
     )
     audio_path = Path(result["audio_path"])
     if not audio_path.is_file() or audio_path.stat().st_size <= 44:

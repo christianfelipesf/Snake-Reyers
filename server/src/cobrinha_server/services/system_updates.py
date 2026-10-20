@@ -106,7 +106,7 @@ def synchronize(*, install: bool) -> dict[str, Any]:
         elif update_available:
             message = f"Versão {available} disponível para instalação."
         else:
-            message = "O Snake Reyers já está atualizado."
+            message = "O Snake Reyers Lite já está atualizado."
 
         with _state_lock:
             _state.update(

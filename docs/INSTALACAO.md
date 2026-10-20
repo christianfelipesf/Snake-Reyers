@@ -1,8 +1,8 @@
 # Tutorial de instalação
 
-Este guia instala o Snake Reyers sem exigir o projeto-fonte do Godot. O jogo já vem compilado no pacote da plataforma.
+Este guia instala o Snake Reyers Lite sem exigir o projeto-fonte do Godot. O jogo já vem compilado no pacote da plataforma.
 
-Ao baixar, instalar ou executar o sistema, o usuário aceita a [Licença Snake Reyers](../LICENSE). O uso é gratuito, e a monetização é permitida exclusivamente nas próprias lives do usuário no TikTok. A venda, revenda, locação, sublicença e oferta do sistema como serviço pago são proibidas.
+Ao baixar, instalar ou executar o sistema, o usuário aceita a [Licença Snake Reyers Lite](../LICENSE). O uso é gratuito, e a monetização é permitida exclusivamente nas próprias lives do usuário no TikTok. A venda, revenda, locação, sublicença e oferta do sistema como serviço pago são proibidas.
 
 ## Windows 10 e 11
 
@@ -33,11 +33,11 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\installer\windows\install.ps1
 ```
 
-O instalador prepara cópias locais de Python e Node.js, instala o Piper e baixa as vozes em português e os pacotes de música de fundo. Esses componentes ficam dentro da pasta do Snake Reyers e não substituem instalações globais do computador.
+O instalador prepara cópias locais de Python e Node.js, instala o Piper e baixa as vozes em português e os pacotes de música de fundo. Esses componentes ficam dentro da pasta do Snake Reyers Lite e não substituem instalações globais do computador.
 
 ### 4. Iniciar
 
-Ao concluir, abra o atalho **Snake Reyers** criado na Área de Trabalho. Ele inicia o servidor sem deixar uma janela do PowerShell aberta e abre o painel automaticamente.
+Ao concluir, abra o atalho **Snake Reyers Lite** criado na Área de Trabalho. Ele inicia o servidor sem deixar uma janela do PowerShell aberta e abre o painel automaticamente.
 
 Se o atalho for removido, execute `launcher\create_shortcut.ps1` para criá-lo novamente.
 
@@ -83,7 +83,7 @@ chmod +x installer/linux/install.sh
 ./installer/linux/install.sh
 ```
 
-Depois da instalação, abra o atalho **Snake Reyers** criado na Área de Trabalho.
+Depois da instalação, abra o atalho **Snake Reyers Lite** criado na Área de Trabalho.
 
 O painel permite informar o display usado pelo jogo e escolher entre o build compilado e o Godot editor, quando o projeto estiver disponível.
 
@@ -115,7 +115,7 @@ Confirme no painel se o monitor está **conectado** e **escutando**. A live do u
 
 ### O monitor não conecta
 
-Por padrão, o monitor usa uma conexão direta. Se a sua rede exigir um proxy SOCKS, defina `SNAKE_REYERS_MONITOR_PROXY` antes de abrir o Snake Reyers, por exemplo `socks5h://127.0.0.1:1080`. Se você usa um provedor de assinatura do TikTok, defina também `SNAKE_REYERS_SIGN_API_KEY`. Essas duas opções são opcionais e não são necessárias para o funcionamento normal.
+Por padrão, o monitor usa uma conexão direta. Se a sua rede exigir um proxy SOCKS, defina `SNAKE_REYERS_MONITOR_PROXY` antes de abrir o Snake Reyers Lite, por exemplo `socks5h://127.0.0.1:1080`. Se você usa um provedor de assinatura do TikTok, defina também `SNAKE_REYERS_SIGN_API_KEY`. Essas duas opções são opcionais e não são necessárias para o funcionamento normal.
 
 ### A primeira fala demora
 
@@ -131,4 +131,4 @@ As dependências, as vozes e os pacotes de áudio ocupam alguns gigabytes. Liber
 
 ## Ajuda
 
-Participe da [comunidade Snake Reyers no WhatsApp](https://chat.whatsapp.com/Ey2Z4l9JXpc8ueVBmLh50g).
+Participe da [comunidade Snake Reyers Lite no WhatsApp](https://chat.whatsapp.com/Ey2Z4l9JXpc8ueVBmLh50g).

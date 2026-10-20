@@ -99,4 +99,4 @@ if ! "${ROOT_DIR}/launcher/create_shortcut_linux.sh"; then
 	echo "Aviso: nao foi possivel criar o atalho na Area de Trabalho." >&2
 fi
 
-echo "Snake Reyers instalado com TTS, vozes e musicas. Use o atalho da Area de Trabalho para iniciar."
+echo "Snake Reyers Lite instalado com voz Piper, jogo e musicas. Use o atalho da Area de Trabalho para iniciar."

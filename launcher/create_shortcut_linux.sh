@@ -20,12 +20,18 @@ if [[ -z "${DESKTOP_DIR}" ]]; then
 fi
 
 mkdir -p "${DESKTOP_DIR}"
-SHORTCUT="${DESKTOP_DIR}/Snake Reyers.desktop"
+
+LEGACY_SHORTCUT="${DESKTOP_DIR}/Snake Reyers.desktop"
+if [[ -f "${LEGACY_SHORTCUT}" ]]; then
+	rm -f "${LEGACY_SHORTCUT}"
+fi
+
+SHORTCUT="${DESKTOP_DIR}/Snake Reyers Lite.desktop"
 cat >"${SHORTCUT}" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Snake Reyers
-Comment=Iniciar o Snake Reyers e abrir o painel
+Name=Snake Reyers Lite
+Comment=Iniciar o Snake Reyers Lite e abrir o painel
 Exec="${ROOT_DIR}/launcher/start_linux.sh"
 Icon=applications-games
 Terminal=false
