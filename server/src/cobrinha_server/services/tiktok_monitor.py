@@ -92,11 +92,16 @@ _STATE: dict[str, Any] = {
     "last_socket_event": "",
     "last_socket_event_at": 0.0,
     "last_listen_at": 0.0,
+    "last_gift": {},
+    "last_gift_error": "",
+    "last_diagnostic": "",
     "reconnect_count": 0,
     "started_at": 0.0,
     "counters": {
         "comment": 0,
         "gift": 0,
+        "gift_socket": 0,
+        "gift_invalid": 0,
         "gift_duplicate": 0,
         "gift_combo_update": 0,
         "like": 0,
@@ -562,10 +567,15 @@ def start_monitor(
         last_socket_event="",
         last_socket_event_at=0.0,
         last_listen_at=0.0,
+        last_gift={},
+        last_gift_error="",
+        last_diagnostic="",
         reconnect_count=0,
         counters={
             "comment": 0,
             "gift": 0,
+            "gift_socket": 0,
+            "gift_invalid": 0,
             "gift_duplicate": 0,
             "gift_combo_update": 0,
             "like": 0,
@@ -1178,6 +1188,7 @@ def _gift_name(
             "gift.name",
             "giftDetails.giftName",
             "giftDetails.name",
+            "giftDetails.title",
         )
         or ""
     ).strip()
@@ -1255,6 +1266,9 @@ def _gift_combo_fields(
             "gift_type",
             "gift.giftType",
             "gift.gift_type",
+            "giftDetails.giftType",
+            "giftDetails.gift_type",
+            "giftDetails.type",
         ),
         0,
     )
@@ -1264,6 +1278,8 @@ def _gift_combo_fields(
         "repeat_end",
         "gift.repeatEnd",
         "gift.repeat_end",
+        "giftDetails.repeatEnd",
+        "giftDetails.repeat_end",
     )
     repeat_end = repeat_end_value in {
         True,
@@ -1414,12 +1430,17 @@ def normalize_gift_payload(
         "group_id",
         "gift.groupId",
         "gift.group_id",
+        "giftDetails.groupId",
+        "giftDetails.group_id",
     )
     gift_id = _gift_combo_value(
         data,
         "giftId",
         "gift_id",
         "gift.gift_id",
+        "giftDetails.giftId",
+        "giftDetails.gift_id",
+        "giftDetails.id",
     )
 
     return {
@@ -1590,6 +1611,14 @@ def ingest_gift(
         not payload["username"]
         or not payload["gift_name"]
     ):
+        _count("gift_invalid")
+        _update(
+            last_gift_error="Presente recebido sem usuario ou nome.",
+            last_gift={
+                "username": str(payload.get("username") or ""),
+                "gift_name": str(payload.get("gift_name") or ""),
+            },
+        )
         return {
             "ok": False,
             "ignored": True,
@@ -1625,6 +1654,17 @@ def ingest_gift(
         top_supporters.record_gift(event)
 
     _count("gift")
+    _update(
+        last_gift={
+            "username": str(payload.get("username") or ""),
+            "display_name": str(payload.get("display_name") or ""),
+            "gift_name": str(payload.get("gift_name") or ""),
+            "count": int(payload.get("count") or 1),
+            "coin_value": int(payload.get("coin_value") or 0),
+            "received_at": time.time(),
+        },
+        last_gift_error="",
+    )
     _mark_ingested_event("gift")
 
     return {
@@ -1816,12 +1856,27 @@ def _register_handlers(
     def on_gift(
         raw: object,
     ) -> None:
+        _count("gift_socket")
         _mark_socket_event("gift")
         data = _parse_payload(
             raw
         )
 
         ingest_tiktok_gift(data)
+
+    @client.on(
+        "data-monitor-diagnostic"
+    )
+    def on_monitor_diagnostic(
+        raw: object,
+    ) -> None:
+        data = _parse_payload(raw)
+        message = str(
+            data.get("message")
+            or data.get("error")
+            or "Diagnostico do monitor sem detalhes."
+        ).strip()
+        _update(last_diagnostic=message)
 
     @client.on(
         "data-like"

@@ -1079,10 +1079,34 @@ async function refresh() {
       ?.gifts_pending || 0
   );
 
+  const giftsReceived = Number(
+    monitorState.monitor
+      ?.counters?.gift || 0
+  );
+
+  const giftsAtSocket = Number(
+    monitorState.monitor
+      ?.counters?.gift_socket || 0
+  );
+
+  const readyGiftSongs = Number(
+    monitorState.gift_audio
+      ?.ready_gifts || 0
+  );
+
+  const configuredGiftSongs = Number(
+    monitorState.gift_audio
+      ?.configured_gifts || 0
+  );
+
   setState(
     "socialEvents",
-    `${commentsPending} comentários / ${giftsPending} presentes`,
-    commentsPending > 0 || giftsPending > 0
+    `${commentsPending} comentários / ${giftsPending} presentes na fila | `
+      + `${giftsReceived}/${giftsAtSocket} presentes aceitos | `
+      + `${readyGiftSongs}/${configuredGiftSongs} reações com áudio`,
+    commentsPending > 0
+      || giftsPending > 0
+      || giftsReceived > 0
   );
 
   $("monitorStart").disabled =

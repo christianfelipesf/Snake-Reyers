@@ -17,6 +17,7 @@ RUNS_DIR = PROJECT_DIR / "runs"
 LOGS_DIR = RUNS_DIR / "logs"
 PRIVATE_DIR = PROJECT_DIR / "private"
 ASSETS_DIR = PROJECT_DIR / "assets"
+CONFIG_DIR = PROJECT_DIR / "config"
 VOICE_DIR = ASSETS_DIR / "voice"
 BUILDS_DIR = PROJECT_DIR / "builds"
 

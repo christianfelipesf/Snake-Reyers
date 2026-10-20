@@ -5,6 +5,7 @@
 server/private/
 server/runs/
 server/config/*.json
+!server/config/song_gift_map.json
 *.key
 *.pem
 *.p12

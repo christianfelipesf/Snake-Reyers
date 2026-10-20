@@ -13,7 +13,8 @@ from cobrinha_server.core.settings import RUNS_DIR
 TOP_SUPPORTERS_FILE = RUNS_DIR / "top_supporters_live.json"
 
 TOP_LIMIT = 6
-INACTIVE_AFTER_SECONDS = 120.0
+# O ranking vale pela sessao inteira. O estado e limpo ao iniciar/parar a live.
+INACTIVE_AFTER_SECONDS = 24.0 * 60.0 * 60.0
 LIKE_POINTS = 20
 SHARE_POINTS = 40
 GIFT_POINTS_PER_COIN = 100

@@ -63,6 +63,36 @@ def test_tiktok_gift_normalization_preserves_message_id():
     assert payload["event_id"] == "tiktok-message-456"
 
 
+def test_tiktok_gift_normalization_accepts_current_nested_details():
+    payload = tiktok_monitor.normalize_gift_payload(
+        {
+            "common": {"msgId": "nested-gift-1"},
+            "user": {
+                "userId": "user-1",
+                "uniqueId": "ana",
+                "nickname": "Ana",
+            },
+            "giftDetails": {
+                "giftId": "heart-me-id",
+                "giftName": "Heart Me",
+                "giftType": 1,
+                "diamondCount": 1,
+            },
+            "repeatCount": 2,
+            "repeatEnd": True,
+        }
+    )
+
+    assert payload["event_id"] == "nested-gift-1"
+    assert payload["username"] == "ana"
+    assert payload["gift_name"] == "Heart Me"
+    assert payload["gift_id"] == "heart-me-id"
+    assert payload["gift_type"] == 1
+    assert payload["coin_value"] == 1
+    assert payload["count"] == 2
+    assert payload["repeat_end"] is True
+
+
 def test_tiktok_combo_is_ingested_on_first_update_only(monkeypatch):
     accepted = []
     monkeypatch.setattr(

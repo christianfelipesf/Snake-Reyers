@@ -56,6 +56,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 let usernames = [];
 let activeListenWrapper = null;
 
+function serializeEvent(data) {
+    return JSON.stringify(data, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+    );
+}
+
+function emitEvent(socket, eventName, data) {
+    try {
+        socket.emit(eventName, serializeEvent(data));
+    } catch (error) {
+        const message = `${eventName}: ${error?.message || error}`;
+        console.error(`Falha ao serializar evento TikTok: ${message}`);
+        socket.emit(
+            'data-monitor-diagnostic',
+            JSON.stringify({ event: eventName, message }),
+        );
+    }
+}
+
 ws.on('connection', socket => {
     console.log('New client connected');
     let tiktokConnectionWrapper;
@@ -155,8 +174,8 @@ function setupConnectionEvents(wrapper, socket, username) {
     wrapper.on('dataMessage', data => socket.emit('data-message', data));
 
     // Event mappings for TikTok connection
-    wrapper.connection.on('chat', data => socket.emit('data-chat', JSON.stringify(data)));
-    wrapper.connection.on('gift', data => socket.emit('data-gift', JSON.stringify(data)));
+    wrapper.connection.on('chat', data => emitEvent(socket, 'data-chat', data));
+    wrapper.connection.on('gift', data => emitEvent(socket, 'data-gift', data));
     wrapper.connection.on('member', data => socket.emit('data-member', JSON.stringify(data)));
     wrapper.connection.on('roomUser', data => socket.emit('data-viewer', JSON.stringify(data)));
     wrapper.connection.on('like', data => socket.emit('data-like', JSON.stringify(data)));

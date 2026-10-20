@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "mappings": {
+    "doughnut": {
+      "song_id": "rosquinha",
+      "song_ids": ["rosquinha"],
+      "selection": "first",
+      "initial_count": 1,
+      "repeat_count": 10
+    },
+    "heart-me": {
+      "song_id": "heart-me-08",
+      "song_ids": [
+        "heart-me-08",
+        "heart-me-09",
+        "heart-me-10",
+        "heart-me-11",
+        "heart-me-12",
+        "heart-me-13",
+        "heart-me-14",
+        "heart-me-15",
+        "heart-me-16",
+        "heart-me-17",
+        "heart-me-18",
+        "heart-me-19",
+        "heart-me-20",
+        "heart-me-21",
+        "heart-me-22",
+        "heart-me-23",
+        "heart-me-24",
+        "heart-me-25",
+        "heart-me-26"
+      ],
+      "selection": "random",
+      "initial_count": 1,
+      "repeat_count": 1
+    },
+    "ice-cream-cone": {
+      "song_id": "ice-cream-cone",
+      "song_ids": ["ice-cream-cone"],
+      "selection": "first",
+      "initial_count": 1,
+      "repeat_count": 10
+    },
+    "rose": {
+      "song_id": "rose",
+      "song_ids": [
+        "rose",
+        "rosinha",
+        "rosa",
+        "tenta-outra-rosa",
+        "nao-vou-enrolar-rosa",
+        "rosa-01",
+        "rosa-sertanejo"
+      ],
+      "selection": "random",
+      "initial_count": 1,
+      "repeat_count": 10
+    },
+    "tiktok": {
+      "song_id": "passinho-do-abismo",
+      "song_ids": ["passinho-do-abismo"],
+      "selection": "first",
+      "initial_count": 1,
+      "repeat_count": 10
+    }
+  }
+}

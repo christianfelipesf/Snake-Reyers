@@ -18,6 +18,7 @@ from cobrinha_server.core.json_store import (
 )
 from cobrinha_server.core.settings import (
     ASSETS_DIR,
+    CONFIG_DIR,
     LOGS_DIR,
     PRIVATE_DIR,
     RUNS_DIR,
@@ -32,6 +33,7 @@ SONG_INPUT_DIR = SINGING_DIR / "originals"
 SONG_PROCESSED_DIR = SINGING_DIR / "processed"
 SONG_RUNTIME_FILE = RUNS_DIR / "song_runtime.json"
 SONG_GIFT_MAP_FILE = PRIVATE_DIR / "song_gift_map.json"
+DEFAULT_SONG_GIFT_MAP_FILE = CONFIG_DIR / "song_gift_map.json"
 SONG_GIFT_PROGRESS_FILE = RUNS_DIR / "song_gift_progress.json"
 SONG_PROCESS_LOG_FILE = LOGS_DIR / "song_processing.log"
 DEMUX_RUNS_DIR = RUNS_DIR / "demucs"
@@ -61,6 +63,7 @@ SUPPORTED_AUDIO_EXTENSIONS = {
 
 _LOCK = threading.Lock()
 _PROCESS_THREAD: threading.Thread | None = None
+_GIFT_AUDIO_DIAGNOSTICS_CACHE: dict[str, Any] = {}
 
 
 def _ensure_dirs() -> None:
@@ -650,10 +653,15 @@ def _song_id_from_source(
 
 
 def _read_gift_rules() -> dict[str, dict[str, Any]]:
-    raw = read_json(
-        SONG_GIFT_MAP_FILE,
-        {},
+    raw = read_json(SONG_GIFT_MAP_FILE, {})
+
+    private_mappings = (
+        raw.get("mappings", raw)
+        if isinstance(raw, dict)
+        else {}
     )
+    if not isinstance(private_mappings, dict) or not private_mappings:
+        raw = read_json(DEFAULT_SONG_GIFT_MAP_FILE, {})
 
     if not isinstance(
         raw,
@@ -746,6 +754,62 @@ def _read_gift_rules() -> dict[str, dict[str, Any]]:
             }
 
     return result
+
+
+def gift_audio_diagnostics() -> dict[str, Any]:
+    cache_key = "|".join(
+        (
+            str(SONG_GIFT_MAP_FILE),
+            str(DEFAULT_SONG_GIFT_MAP_FILE),
+            str(SONG_PROCESSED_DIR),
+        )
+    )
+    cached_at = float(
+        _GIFT_AUDIO_DIAGNOSTICS_CACHE.get("at") or 0.0
+    )
+    if (
+        _GIFT_AUDIO_DIAGNOSTICS_CACHE.get("key") == cache_key
+        and time.time() - cached_at < 15.0
+    ):
+        return dict(
+            _GIFT_AUDIO_DIAGNOSTICS_CACHE.get("value") or {}
+        )
+
+    mappings = gift_mappings()
+    ready = [item for item in mappings if item.get("ready")]
+    missing = [
+        {
+            "gift_key": str(item.get("gift_key") or ""),
+            "missing_song_ids": list(item.get("missing_song_ids") or []),
+        }
+        for item in mappings
+        if not item.get("ready")
+    ]
+    private_payload = read_json(SONG_GIFT_MAP_FILE, {})
+    private_mappings = (
+        private_payload.get("mappings", private_payload)
+        if isinstance(private_payload, dict)
+        else {}
+    )
+    result = {
+        "configured_gifts": len(mappings),
+        "ready_gifts": len(ready),
+        "all_ready": bool(mappings) and len(ready) == len(mappings),
+        "configuration_source": (
+            "private"
+            if isinstance(private_mappings, dict) and private_mappings
+            else "default"
+        ),
+        "missing": missing,
+    }
+    _GIFT_AUDIO_DIAGNOSTICS_CACHE.update(
+        {
+            "key": cache_key,
+            "at": time.time(),
+            "value": result,
+        }
+    )
+    return dict(result)
 
 
 def _read_gift_map() -> dict[str, str]:

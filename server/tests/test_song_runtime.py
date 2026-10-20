@@ -295,6 +295,45 @@ def test_stale_overflow_counter_is_reset_before_counting(monkeypatch, tmp_path):
     assert rose["overflow_reset_count"] == 1
 
 
+def test_public_default_gift_map_is_used_without_private_config(
+    monkeypatch,
+    tmp_path,
+):
+    _setup_song_runtime(monkeypatch, tmp_path)
+    song_runtime.SONG_GIFT_MAP_FILE.unlink()
+    default_map = tmp_path / "config" / "song_gift_map.json"
+    default_map.parent.mkdir(parents=True)
+    default_map.write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "mappings": {
+                    "heart-me": {
+                        "song_id": "rose",
+                        "song_ids": ["rose"],
+                        "initial_count": 1,
+                        "repeat_count": 1,
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        song_runtime,
+        "DEFAULT_SONG_GIFT_MAP_FILE",
+        default_map,
+    )
+
+    result = song_runtime.song_trigger_for_gift_event(
+        _gift_event("Heart Me", 1)
+    )
+
+    assert result["should_play"] is True
+    assert result["song_id"] == "rose"
+    assert song_runtime.gift_audio_diagnostics()["configuration_source"] == "default"
+
+
 def test_mapped_gifts_keep_independent_song_counters(monkeypatch, tmp_path):
     gift_progress = _setup_song_runtime(monkeypatch, tmp_path)
     processed_dir = song_runtime.SONG_PROCESSED_DIR

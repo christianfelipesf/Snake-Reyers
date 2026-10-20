@@ -186,9 +186,18 @@ function Install-AudioPackages {
 
     $ManifestHash = (Get-FileHash -Algorithm SHA256 -Path $ManifestPath).Hash.ToLowerInvariant()
     $MarkerPath = Join-Path $ServerDir "assets\.audio-package-version"
+    $BackgroundReady = @(
+        Get-ChildItem -Path (Join-Path $ServerDir "assets\music\background") -File -ErrorAction SilentlyContinue
+    ).Count -gt 0
+    $GiftSongReady = @(
+        Get-ChildItem -Path (Join-Path $ServerDir "assets\singing\processed\FANCLUB") -Filter "manifest.json" -File -Recurse -ErrorAction SilentlyContinue
+    ).Count -gt 0
+
     if (
         (Test-Path $MarkerPath) -and
-        ((Get-Content -Raw $MarkerPath).Trim() -eq $ManifestHash)
+        ((Get-Content -Raw $MarkerPath).Trim() -eq $ManifestHash) -and
+        $BackgroundReady -and
+        $GiftSongReady
     ) {
         Write-Host "Vozes e musicas ja estao instaladas."
         return

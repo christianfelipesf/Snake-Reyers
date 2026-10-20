@@ -51,6 +51,17 @@ if ($MissingPayload.Count -gt 0) {
     throw "Instalacao incompleta. Execute novamente installer\windows\install.ps1."
 }
 
+$GiftSongManifest = Get-ChildItem `
+    -Path (Join-Path $ServerDir "assets\singing\processed\FANCLUB") `
+    -Filter "manifest.json" `
+    -File `
+    -Recurse `
+    -ErrorAction SilentlyContinue `
+    | Select-Object -First 1
+if (-not $GiftSongManifest) {
+    throw "Musicas de presentes ausentes. Execute novamente installer\windows\install.ps1."
+}
+
 New-Item -ItemType Directory -Force -Path $LogDir, $TorDataDir | Out-Null
 $env:PATH = "$NodeDir;$env:PATH"
 $env:COBRINHA_SERVER_DIR = $ServerDir
