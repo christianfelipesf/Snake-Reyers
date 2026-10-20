@@ -81,6 +81,12 @@ Entre no grupo para trocar ideias, relatar problemas e acompanhar o desenvolvime
 
 [Participar da comunidade Snake Reyers no WhatsApp](https://chat.whatsapp.com/Ey2Z4l9JXpc8ueVBmLh50g)
 
+## Apoie o projeto
+
+Estou dando o sistema de graça. Que tal me pagar um cafezinho? Haha!
+
+**Chave Pix:** `4b3d5583-daa5-4d66-9972-3c7ac33741f3`
+
 ## Atualizações
 
 As novas versões serão publicadas nas [Releases](https://github.com/golgol2/Snake-Reyers/releases). Cada pacote possui um hash SHA-256 para conferência de integridade.

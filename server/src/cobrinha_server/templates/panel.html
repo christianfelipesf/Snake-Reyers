@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Cobrinha Live Server</title>
-  <link rel="stylesheet" href="/static/css/panel.css?v=3">
+  <link rel="stylesheet" href="/static/css/panel.css?v=4">
 </head>
 <body>
   <main class="shell">
@@ -373,6 +373,21 @@
         <pre id="state" class="cobrinha-state">Carregando...</pre>
       </article>
     </section>
+
+    <section class="support-strip" aria-labelledby="supportTitle">
+      <div class="support-copy">
+        <span class="support-kicker">Apoie o Snake Reyers</span>
+        <h2 id="supportTitle">Que tal me pagar um cafezinho?</h2>
+        <p>Estou dando o sistema de graça. Se ele ajudar sua live, seu apoio ajuda o projeto a continuar crescendo. Haha!</p>
+      </div>
+
+      <div class="pix-block">
+        <span class="pix-label">Chave Pix</span>
+        <code id="pixKey" class="pix-key">4b3d5583-daa5-4d66-9972-3c7ac33741f3</code>
+        <button id="copyPix" type="button">Copiar chave Pix</button>
+        <small id="pixCopyStatus" role="status" aria-live="polite"></small>
+      </div>
+    </section>
   </main>
 
   <dialog id="textureModal" class="modal">
@@ -535,6 +550,6 @@
     </form>
   </dialog>
 
-  <script src="/static/js/panel.js?v=13"></script>
+  <script src="/static/js/panel.js?v=14"></script>
 </body>
 </html>

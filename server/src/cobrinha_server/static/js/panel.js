@@ -2730,3 +2730,47 @@ refreshBuildStatus().catch(
     }
   }
 );
+
+async function copyPixKey() {
+  const key = $("pixKey")?.textContent?.trim();
+  const button = $("copyPix");
+  const status = $("pixCopyStatus");
+
+  if (!key || !button || !status) {
+    return;
+  }
+
+  const originalLabel = button.textContent;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(key);
+    } else {
+      const temporaryInput = document.createElement("textarea");
+      temporaryInput.value = key;
+      temporaryInput.setAttribute("readonly", "");
+      temporaryInput.style.position = "fixed";
+      temporaryInput.style.opacity = "0";
+      document.body.appendChild(temporaryInput);
+      temporaryInput.select();
+
+      if (!document.execCommand("copy")) {
+        throw new Error("Nao foi possivel copiar a chave Pix.");
+      }
+
+      temporaryInput.remove();
+    }
+
+    button.textContent = "Copiado";
+    status.textContent = "Chave Pix copiada.";
+  } catch (error) {
+    status.textContent = "Nao foi possivel copiar. Selecione a chave acima.";
+  } finally {
+    window.setTimeout(() => {
+      button.textContent = originalLabel;
+      status.textContent = "";
+    }, 3000);
+  }
+}
+
+$("copyPix")?.addEventListener("click", copyPixKey);
