@@ -161,6 +161,11 @@ def preferred_live_executable(
         or "build"
     ).strip().casefold()
 
+    if os.name == "nt":
+        return str(
+            EXPORTED_GAME_EXECUTABLE
+        )
+
     if runtime in {
         "editor",
         "godot",

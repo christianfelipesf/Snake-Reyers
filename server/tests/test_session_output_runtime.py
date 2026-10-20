@@ -1,4 +1,5 @@
 from cobrinha_server.services import (
+    session_executor_plan,
     session_runtime_orchestrator as orchestrator,
 )
 from cobrinha_server.services.output_metrics import (
@@ -19,6 +20,23 @@ def _arg_after(
 ) -> str:
     index = argv.index(name)
     return argv[index + 1]
+
+
+def test_windows_always_uses_packaged_game(monkeypatch, tmp_path):
+    game = tmp_path / "game" / "windows" / "SnakeReyers.exe"
+    monkeypatch.setattr(session_executor_plan.os, "name", "nt")
+    monkeypatch.setattr(
+        session_executor_plan,
+        "EXPORTED_GAME_EXECUTABLE",
+        game,
+    )
+
+    selected = session_executor_plan.preferred_live_executable(
+        "/snap/bin/godot-4",
+        "editor",
+    )
+
+    assert selected == str(game)
 
 
 def test_capture_spec_uses_stable_tiktok_audio_and_no_ack_restart():

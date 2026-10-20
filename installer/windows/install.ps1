@@ -31,6 +31,7 @@ function Get-VerifiedDownload {
         [Parameter(Mandatory = $true)][string]$Sha256
     )
 
+    New-Item -ItemType Directory -Force -Path (Split-Path $Destination -Parent) | Out-Null
     if (Test-Path $Destination) {
         $ExistingHash = (Get-FileHash -Algorithm SHA256 -Path $Destination).Hash.ToLowerInvariant()
         if ($ExistingHash -eq $Sha256) {
@@ -39,12 +40,54 @@ function Get-VerifiedDownload {
         Remove-Item -Force $Destination
     }
 
-    Write-Host "Baixando $([IO.Path]::GetFileName($Destination))..."
-    Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $Destination
-    $ActualHash = (Get-FileHash -Algorithm SHA256 -Path $Destination).Hash.ToLowerInvariant()
-    if ($ActualHash -ne $Sha256) {
-        Remove-Item -Force $Destination
-        throw "Falha de integridade no download de $Url"
+    $Temporary = "$Destination.download"
+    $Curl = Get-Command "curl.exe" -ErrorAction SilentlyContinue
+    for ($Attempt = 1; $Attempt -le 4; $Attempt++) {
+        if (Test-Path $Temporary) {
+            Remove-Item -Force $Temporary
+        }
+
+        try {
+            Write-Host "Baixando $([IO.Path]::GetFileName($Destination)) (tentativa $Attempt de 4)..."
+            if ($Curl) {
+                & $Curl.Source `
+                    --fail `
+                    --location `
+                    --silent `
+                    --show-error `
+                    --connect-timeout 30 `
+                    --max-time 1800 `
+                    --retry 2 `
+                    --retry-delay 2 `
+                    --output $Temporary `
+                    $Url
+                if ($LASTEXITCODE -ne 0) {
+                    throw "curl.exe terminou com o codigo $LASTEXITCODE"
+                }
+            } else {
+                Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $Temporary
+            }
+
+            if (-not (Test-Path $Temporary) -or (Get-Item $Temporary).Length -le 0) {
+                throw "O servidor nao enviou dados."
+            }
+            $ActualHash = (Get-FileHash -Algorithm SHA256 -Path $Temporary).Hash.ToLowerInvariant()
+            if ($ActualHash -ne $Sha256) {
+                throw "O SHA-256 recebido nao confere."
+            }
+
+            Move-Item -Force -Path $Temporary -Destination $Destination
+            return
+        } catch {
+            if (Test-Path $Temporary) {
+                Remove-Item -Force $Temporary
+            }
+            if ($Attempt -eq 4) {
+                throw "Falha ao baixar ou validar $Url depois de 4 tentativas: $($_.Exception.Message)"
+            }
+            Write-Warning "Download interrompido. Nova tentativa sera feita automaticamente."
+            Start-Sleep -Seconds (3 * $Attempt)
+        }
     }
 }
 

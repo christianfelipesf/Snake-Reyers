@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Callable
 
@@ -129,6 +130,9 @@ def _normalize_panel_sink(value: object) -> str:
 
 
 def _normalize_game_runtime(value: object) -> str:
+    if os.name == "nt":
+        return "build"
+
     clean = str(value or "").strip().casefold()
     if clean in {
         "editor",

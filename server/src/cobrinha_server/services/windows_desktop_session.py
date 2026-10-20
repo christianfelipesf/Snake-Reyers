@@ -10,7 +10,10 @@ from typing import Any
 from cobrinha_server.bridge.godot_bridge import godot_bridge
 from cobrinha_server.core.settings import LOGS_DIR
 from cobrinha_server.services import tiktok_monitor
-from cobrinha_server.services.session_executor_plan import build_game_plan
+from cobrinha_server.services.session_executor_plan import (
+    build_game_plan,
+    preferred_live_executable,
+)
 
 
 _LOCK = threading.RLock()
@@ -98,7 +101,12 @@ def start(
                 "windows_desktop": status(),
             }
 
-        executable_path = Path(executable).expanduser().resolve()
+        executable_path = Path(
+            preferred_live_executable(
+                executable,
+                "build",
+            )
+        ).expanduser().resolve()
         if not executable_path.is_file():
             return {
                 "ok": False,
