@@ -1,5 +1,16 @@
 # Atualizacoes
 
+## Versao 0.1.7
+
+O monitor agora reconhece os limites de conexao da Euler Stream e aguarda o
+horario informado pelo servidor antes de tentar novamente. O painel mostra o
+estado `LIMITE EULER - AGUARDANDO`, e reinicios internos deixam de criar varias
+tentativas simultaneas.
+
+Quando esse estado aparecer, mantenha o programa aberto. O monitor retomara
+automaticamente; reiniciar o computador ou clicar repetidamente em conectar
+nao antecipa a liberacao da cota.
+
 O launcher verifica atualizacoes antes de iniciar o servidor. Por padrao ele usa o manifesto oficial:
 
 ```text

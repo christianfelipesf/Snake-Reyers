@@ -1177,9 +1177,15 @@ async function refresh() {
       .test(monitorError)
   );
 
+  const monitorRateLimited = Boolean(
+    monitorState.monitor?.rate_limited
+  );
+
   setState(
     "monitor",
-    liveNotFound
+    monitorRateLimited
+      ? "LIMITE EULER · AGUARDANDO"
+      : liveNotFound
       ? "LIVE NÃO ENCONTRADA"
       : monitorListening
       ? "ESCUTANDO LIVE"
@@ -1198,7 +1204,7 @@ async function refresh() {
   const monitorResult = $("monitorResult");
   if (
     monitorResult
-    && liveNotFound
+    && (liveNotFound || monitorRateLimited)
   ) {
     monitorResult.textContent = monitorError;
   }

@@ -60,7 +60,7 @@ def _env_float(
         return float(default)
 
 
-LISTEN_RETRY_SECONDS = 20.0
+LISTEN_RETRY_SECONDS = 180.0
 EVENT_STALE_RECONNECT_SECONDS = max(
     45.0,
     min(
@@ -96,6 +96,11 @@ _STATE: dict[str, Any] = {
     "last_gift_error": "",
     "last_diagnostic": "",
     "reconnect_count": 0,
+    "connection_state": "idle",
+    "rate_limited": False,
+    "error_code": "",
+    "retry_after_seconds": 0,
+    "retry_at": 0.0,
     "started_at": 0.0,
     "counters": {
         "comment": 0,
@@ -170,6 +175,18 @@ def _friendly_connection_error(
 ) -> str:
     message = str(value or "").strip()
     normalized = message.casefold()
+
+    if (
+        "rate_limit_" in normalized
+        or "rate limited" in normalized
+        or "limite de conexoes tiktok/euler"
+        in normalized
+    ):
+        return (
+            "Limite horario de conexoes TikTok/Euler atingido. "
+            "O monitor pausou novas tentativas automaticamente; "
+            "nao reinicie nem clique repetidamente em conectar."
+        )
 
     if (
         "failed to retrieve room id"
@@ -571,6 +588,11 @@ def start_monitor(
         last_gift_error="",
         last_diagnostic="",
         reconnect_count=0,
+        connection_state="connecting",
+        rate_limited=False,
+        error_code="",
+        retry_after_seconds=0,
+        retry_at=0.0,
         counters={
             "comment": 0,
             "gift": 0,
@@ -623,6 +645,11 @@ def stop_monitor(
         running=False,
         connected=False,
         listening=False,
+        connection_state="stopped",
+        rate_limited=False,
+        error_code="",
+        retry_after_seconds=0,
+        retry_at=0.0,
         last_error=(
             "Monitor parado."
         ),
@@ -815,6 +842,25 @@ def _loop(
                         )
                         break
 
+                    continue
+
+                retry_at = _safe_float(
+                    current.get(
+                        "retry_at"
+                    )
+                )
+                if bool(
+                    current.get(
+                        "rate_limited"
+                    )
+                ) and (
+                    retry_at <= 0.0
+                    or now < retry_at
+                ):
+                    # O Node mantem uma unica tentativa agendada para o
+                    # instante indicado pela Euler. Reiniciar o Socket.IO
+                    # aqui criaria outro wrapper e consumiria mais cota.
+                    not_listening_since = now
                     continue
 
                 not_listening_age = (
@@ -1779,6 +1825,11 @@ def _register_handlers(
             running=True,
             connected=True,
             listening=False,
+            connection_state="connecting",
+            rate_limited=False,
+            error_code="",
+            retry_after_seconds=0,
+            retry_at=0.0,
             last_error="",
         )
 
@@ -1816,11 +1867,86 @@ def _register_handlers(
             )
         )
         now = time.time()
+        rate_limited = bool(
+            data.get(
+                "rateLimited"
+            )
+        )
+        retry_at_ms = _safe_float(
+            data.get(
+                "retryAtEpochMs"
+            )
+        )
+        retry_at = (
+            retry_at_ms / 1000.0
+            if retry_at_ms > 0.0
+            else 0.0
+        )
+        retry_after_seconds = int(
+            max(
+                0.0,
+                _safe_float(
+                    data.get(
+                        "retryAfterSeconds"
+                    )
+                ),
+            )
+        )
+        message = _friendly_connection_error(
+            data.get("message")
+            or "Monitor aguardando live.",
+            username=username,
+        )
+        if (
+            rate_limited
+            and retry_at > now
+        ):
+            message = (
+                message.rstrip(". ")
+                + ". Nova tentativa automatica apos "
+                + time.strftime(
+                    "%H:%M:%S",
+                    time.localtime(retry_at),
+                )
+                + "."
+            )
 
         _update(
             running=True,
             connected=True,
             listening=listening,
+            connection_state=(
+                "listening"
+                if listening
+                else (
+                    "rate_limited"
+                    if rate_limited
+                    else "connecting"
+                )
+            ),
+            rate_limited=(
+                False
+                if listening
+                else rate_limited
+            ),
+            error_code=(
+                ""
+                if listening
+                else str(
+                    data.get("code")
+                    or ""
+                )
+            ),
+            retry_after_seconds=(
+                0
+                if listening
+                else retry_after_seconds
+            ),
+            retry_at=(
+                0.0
+                if listening
+                else retry_at
+            ),
             last_listen_at=(
                 now
                 if listening
@@ -1833,11 +1959,7 @@ def _register_handlers(
             last_error=(
                 ""
                 if listening
-                else _friendly_connection_error(
-                    data.get("message")
-                    or "Monitor aguardando live.",
-                    username=username,
-                )
+                else message
             ),
         )
 

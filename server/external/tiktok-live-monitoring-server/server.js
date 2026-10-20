@@ -90,8 +90,8 @@ ws.on('connection', socket => {
         if (proxy) console.log('Using proxy');
 
         try {
-            if (tiktokConnectionWrapper?.connection) {
-                tiktokConnectionWrapper.connection.disconnect();
+            if (tiktokConnectionWrapper) {
+                tiktokConnectionWrapper.disconnect();
             }
             if (activeListenWrapper && activeListenWrapper !== tiktokConnectionWrapper) {
                 try {
@@ -103,9 +103,8 @@ ws.on('connection', socket => {
 
             tiktokConnectionWrapper = new TikTokConnectionWrapper(username, createTorOptions(), true);
             activeListenWrapper = tiktokConnectionWrapper;
-            tiktokConnectionWrapper.connect();
-
             setupConnectionEvents(tiktokConnectionWrapper, socket, username);
+            tiktokConnectionWrapper.connect();
         } catch (err) {
             console.error(err);
         }
@@ -123,9 +122,6 @@ ws.on('connection', socket => {
         console.log('Client asking to stop');
         if (tiktokConnectionWrapper && activeListenWrapper === tiktokConnectionWrapper) {
             tiktokConnectionWrapper.disconnect();
-            if (tiktokConnectionWrapper?.connection) {
-                tiktokConnectionWrapper.connection.disconnect();
-            }
             activeListenWrapper = null;
         }
         socket.emit('data-connection', JSON.stringify({ isConnected: false }));
@@ -133,18 +129,27 @@ ws.on('connection', socket => {
 });
 
 function setupConnectionEvents(wrapper, socket, username) {
-    wrapper.once('connected', state => {
-        usernames.push(username);
+    wrapper.on('connected', state => {
+        if (!usernames.includes(username)) usernames.push(username);
         socket.emit('data-connection', JSON.stringify({ isConnected: true, state }));
     });
 
-    wrapper.once('disconnected', reason => {
-        let message = reason;
-        const reasonText = reason.toString();
+    wrapper.on('disconnected', reason => {
+        const detail = reason && typeof reason === 'object'
+            ? { ...reason }
+            : { message: String(reason || 'Unknown error.'), rateLimited: false };
+        let message = String(detail.message || 'Unknown error.');
+        const reasonText = message;
         if (reasonText.includes('EAI_FAIL') || reasonText.includes('Unable to resolve') || reasonText.includes('Could not resolve')) {
             message = 'Falha de DNS/rede via Tor ao buscar a live no TikTok. Tor e obrigatorio; reinicie o Tor ou aguarde novo circuito.';
         } else if (reasonText.includes('Rate Limited') || reasonText.includes('SignatureRateLimitError') || reasonText.includes('rate_limit_')) {
-            message = `TikTok/Euler rate limit no monitor via Tor: ${reasonText}`;
+            const retryAt = detail.retryAt
+                ? new Date(detail.retryAt).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                })
+                : '';
+            message = `Limite de conexoes TikTok/Euler atingido. Novas tentativas pausadas${retryAt ? ` ate ${retryAt}` : ''}.`;
         } else if (reasonText.includes('SignAPIError') || reasonText.includes('[Sign Error]') || reasonText.includes('Failed to sign request') || reasonText.includes('fetchSignedWebSocket')) {
             message = `Falha de assinatura TikTok/Euler no monitor via Tor: ${reasonText}`;
         } else if (reasonText.includes('status code 451')) {
@@ -154,7 +159,11 @@ function setupConnectionEvents(wrapper, socket, username) {
         } else if (reasonText.includes('not offer a websocket upgrade.')) {
             message = 'Considering to use proxy or change server';
         }
-        socket.emit('data-connection', JSON.stringify({ isConnected: false, message }));
+        socket.emit('data-connection', JSON.stringify({
+            isConnected: false,
+            ...detail,
+            message,
+        }));
     });
 
     wrapper.connection.on('streamEnd', () => {

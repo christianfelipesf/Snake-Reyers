@@ -1,6 +1,11 @@
 // https://github.com/zerodytrash/TikTok-Chat-Reader/blob/main/connectionWrapper.js
 
 const { EventEmitter } = require('events');
+const {
+    GENERIC_RETRY_DELAYS_MS,
+    connectionFailurePolicy,
+    genericRetryDelayMs,
+} = require('./connectionPolicy');
 
 let globalConnectionCount = 0;
 const connector = require('tiktok-live-connector');
@@ -21,8 +26,10 @@ class TikTokConnectionWrapper extends EventEmitter {
         this.clientDisconnected = false;
         this.reconnectEnabled = true;
         this.reconnectCount = 0;
-        this.reconnectWaitMs = 1000;
-        this.maxReconnectAttempts = 5;
+        this.maxReconnectAttempts = GENERIC_RETRY_DELAYS_MS.length;
+        this.reconnectTimer = null;
+        this.isConnecting = false;
+        this.countedConnection = false;
 
         this.connection = new TikTokConnectionClass(uniqueId, options || {});
 
@@ -32,9 +39,19 @@ class TikTokConnectionWrapper extends EventEmitter {
         });
 
         this.connection.on('disconnected', () => {
-            globalConnectionCount -= 1;
+            if (this.countedConnection) {
+                globalConnectionCount = Math.max(0, globalConnectionCount - 1);
+                this.countedConnection = false;
+            }
             this.log(`TikTok connection disconnected`);
-            this.scheduleReconnect();
+            if (!this.clientDisconnected && this.reconnectEnabled) {
+                const detail = {
+                    message: 'TikTok connection disconnected.',
+                    rateLimited: false,
+                };
+                this.emit('disconnected', detail);
+                this.scheduleReconnect(detail);
+            }
         });
 
         this.connection.on('error', err => {
@@ -44,26 +61,34 @@ class TikTokConnectionWrapper extends EventEmitter {
     }
 
     connect(isReconnect) {
-        this.connection
+        if (this.isConnecting || this.clientDisconnected || !this.reconnectEnabled) {
+            return Promise.resolve();
+        }
+
+        this.isConnecting = true;
+        return this.connection
             .connect()
             .then(state => {
+                this.isConnecting = false;
                 this.log(
                     `${isReconnect ? 'Reconnected' : 'Connected'} to roomId ${
                         state.roomId
                     }, websocket: ${state.upgradedToWebsocket}`,
                 );
 
-                globalConnectionCount += 1;
-
-                // Reset reconnect vars
-                this.reconnectCount = 0;
-                this.reconnectWaitMs = 1000;
-
                 // Client disconnected while establishing connection => drop connection
                 if (this.clientDisconnected) {
                     this.connection.disconnect();
                     return;
                 }
+
+                if (!this.countedConnection) {
+                    globalConnectionCount += 1;
+                    this.countedConnection = true;
+                }
+
+                this.reconnectCount = 0;
+                this.clearReconnectTimer();
 
                 // Notify client. A reconexao tambem precisa publicar
                 // "connected", senao o servidor Socket.IO continua
@@ -75,53 +100,64 @@ class TikTokConnectionWrapper extends EventEmitter {
                 this.emit('connected', state);
             })
             .catch(err => {
+                this.isConnecting = false;
                 this.log(`${isReconnect ? 'Reconnect' : 'Connection'} failed, ${err}`);
-                if (isReconnect) {
-                    // Schedule the next reconnect attempt
-                    this.scheduleReconnect(err);
-                } else {
-                    // Notify client
-                    if (
-                        err
-                            .toString()
-                            .includes("Cannot read properties of undefined (reading 'status')")
-                    ) {
-                        this.emit(
-                            'disconnected',
-                            'Currently unavailable to reconnect. Please change server.',
-                        );
-                } else {
-                        console.error('Connection error', err);
-                        this.emit('disconnected', err?.message || err?.toString?.() || 'Unknown error.');
-                        // Falha inicial do Euler/sign server pode ser transitoria.
-                        // Antes o wrapper ficava parado para sempre neste estado.
-                        this.scheduleReconnect(err);
-                    }
+                const policy = connectionFailurePolicy(err);
+
+                if (
+                    policy.message.includes(
+                        "Cannot read properties of undefined (reading 'status')",
+                    )
+                ) {
+                    policy.message = 'Currently unavailable to reconnect. Please change server.';
                 }
+
+                console.error('Connection error', err);
+                this.emit('disconnected', policy);
+                this.scheduleReconnect(policy);
             });
     }
 
-    scheduleReconnect(reason) {
-        if (!this.reconnectEnabled) {
+    scheduleReconnect(reason = {}) {
+        if (!this.reconnectEnabled || this.clientDisconnected || this.reconnectTimer) {
             return;
         }
-        if (this.reconnectCount >= this.maxReconnectAttempts) {
+
+        const rateLimited = Boolean(reason?.rateLimited);
+        if (!rateLimited && this.reconnectCount >= this.maxReconnectAttempts) {
             this.log(`Give up connection, max reconnect attempts exceeded`);
-            this.emit('disconnected', `Connection lost. ${reason}`);
+            this.emit('disconnected', {
+                message: `Connection lost. ${reason?.message || reason}`,
+                code: 'reconnect_attempts_exhausted',
+                rateLimited: false,
+            });
             return;
         }
 
-        this.log(`Try reconnect in ${this.reconnectWaitMs}ms`);
+        const delayMs = rateLimited
+            ? Math.max(1_000, Number(reason.retryDelayMs) || 0)
+            : genericRetryDelayMs(this.reconnectCount);
 
-        setTimeout(() => {
-            if (!this.reconnectEnabled || this.reconnectCount >= this.maxReconnectAttempts) {
+        this.log(`Try reconnect in ${delayMs}ms`);
+
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (!this.reconnectEnabled || this.clientDisconnected) {
                 return;
             }
 
-            this.reconnectCount += 1;
-            this.reconnectWaitMs *= 2;
+            if (!rateLimited) {
+                this.reconnectCount += 1;
+            }
             this.connect(true);
-        }, this.reconnectWaitMs);
+        }, delayMs);
+    }
+
+    clearReconnectTimer() {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
     }
 
     disconnect() {
@@ -129,6 +165,7 @@ class TikTokConnectionWrapper extends EventEmitter {
 
         this.clientDisconnected = true;
         this.reconnectEnabled = false;
+        this.clearReconnectTimer();
 
         const isConnected =
             typeof this.connection.isConnected === 'boolean'

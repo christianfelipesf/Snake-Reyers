@@ -47,3 +47,13 @@ def test_room_id_error_names_the_live_user():
 
     assert "@criador_exemplo" in message
     assert "Live nao encontrada" in message
+
+
+def test_rate_limit_error_tells_user_not_to_reconnect_repeatedly():
+    message = tiktok_monitor._friendly_connection_error(
+        "SignatureRateLimitError rate_limit_account_hour",
+        username="criador_exemplo",
+    )
+
+    assert "Limite horario" in message
+    assert "nao reinicie" in message
