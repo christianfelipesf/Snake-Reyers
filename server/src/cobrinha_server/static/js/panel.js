@@ -598,6 +598,140 @@ function closeTextureModal() {
   }
 }
 
+function closeSystemUpdateModal() {
+  const modal = $("systemUpdateModal");
+  if (!modal) return;
+
+  if (typeof modal.close === "function") {
+    modal.close();
+  } else {
+    modal.removeAttribute("open");
+  }
+}
+
+function renderSystemUpdate(payload) {
+  const top = $("systemUpdateTop");
+  const badge = $("systemUpdateBadge");
+  const title = $("systemUpdateTitle");
+  const versions = $("systemUpdateVersions");
+  const notice = $("systemUpdateLiveNotice");
+  const output = $("systemUpdateOutput");
+  const checkButton = $("systemUpdateCheck");
+  const installButton = $("systemUpdateInstall");
+  const busy = Boolean(payload?.busy);
+  const restarting = Boolean(payload?.restart_scheduled);
+  const available = Boolean(payload?.update_available);
+  const liveActive = Boolean(payload?.live_active);
+  const current = payload?.current || "desconhecida";
+  const next = payload?.available || "não consultada";
+
+  top?.classList.toggle("update-available", available);
+  if (top) {
+    top.textContent = restarting
+      ? "Reiniciando..."
+      : available
+        ? `Atualizar para ${next}`
+        : "Atualizar sistema";
+    top.disabled = restarting;
+  }
+  if (badge) {
+    badge.textContent = restarting
+      ? "Reiniciando"
+      : busy
+      ? "Processando"
+      : available
+        ? "Disponível"
+        : payload?.checked_at
+          ? "Atualizado"
+          : "Aguardando";
+  }
+  if (title) {
+    title.textContent = available
+      ? `Nova versão ${next} disponível`
+      : "Sistema atualizado";
+  }
+  if (versions) {
+    versions.textContent = `Instalada: ${current} · Disponível: ${next}`;
+  }
+  if (notice) {
+    notice.textContent = liveActive
+      ? "A live está ativa. Finalize a transmissão antes de instalar."
+      : "A instalação preserva configurações, músicas e dados locais.";
+  }
+  if (output) {
+    output.textContent = payload?.error
+      || payload?.last_error
+      || payload?.message
+      || "Atualização ainda não consultada.";
+  }
+  if (checkButton) {
+    checkButton.disabled = busy;
+    checkButton.textContent = busy ? "Verificando..." : "Verificar novamente";
+  }
+  if (installButton) {
+    installButton.disabled = busy || restarting || !available || liveActive;
+    installButton.textContent = restarting
+      ? "Reiniciando..."
+      : busy
+      ? "Atualizando..."
+      : "Baixar, instalar e reiniciar";
+  }
+}
+
+async function loadSystemUpdateStatus() {
+  const response = await fetch("/api/system-updates", { cache: "no-store" });
+  const payload = await response.json();
+  renderSystemUpdate(payload);
+  return payload;
+}
+
+async function runSystemUpdate(action) {
+  const response = await fetch(`/api/system-updates/${action}`, { method: "POST" });
+  const payload = await response.json();
+  renderSystemUpdate(payload);
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.error || `HTTP ${response.status}`);
+  }
+  return payload;
+}
+
+async function waitForSystemRestart() {
+  const output = $("systemUpdateOutput");
+  const deadline = Date.now() + 120000;
+  let observedOffline = false;
+
+  while (Date.now() < deadline) {
+    await new Promise(resolve => window.setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/health", { cache: "no-store" });
+      if (response.ok && observedOffline) {
+        window.location.reload();
+        return;
+      }
+    } catch (error) {
+      observedOffline = true;
+      if (output) output.textContent = "Sistema reiniciando. Aguarde...";
+    }
+  }
+
+  if (output) {
+    output.textContent = "O reinício demorou mais que o esperado. Abra o painel novamente.";
+  }
+}
+
+async function openSystemUpdateModal() {
+  const modal = $("systemUpdateModal");
+  if (!modal) return;
+
+  if (typeof modal.showModal === "function") {
+    modal.showModal();
+  } else {
+    modal.setAttribute("open", "open");
+  }
+
+  await runSystemUpdate("check");
+}
+
 function renderTextureStatus(payload) {
   const target = $("textureStatus");
   if (!target) return;
@@ -2702,6 +2836,47 @@ $("closeTextureModal")?.addEventListener(
   closeTextureModal
 );
 
+$("systemUpdateTop")?.addEventListener(
+  "click",
+  () => {
+    openSystemUpdateModal().catch(error => {
+      const output = $("systemUpdateOutput");
+      if (output) output.textContent = String(error);
+    });
+  }
+);
+
+$("closeSystemUpdateModal")?.addEventListener(
+  "click",
+  closeSystemUpdateModal
+);
+
+$("systemUpdateCheck")?.addEventListener(
+  "click",
+  () => {
+    runSystemUpdate("check").catch(error => {
+      const output = $("systemUpdateOutput");
+      if (output) output.textContent = String(error);
+    });
+  }
+);
+
+$("systemUpdateInstall")?.addEventListener(
+  "click",
+  () => {
+    runSystemUpdate("install")
+      .then(payload => {
+        if (payload?.restart_scheduled) {
+          waitForSystemRestart();
+        }
+      })
+      .catch(error => {
+        const output = $("systemUpdateOutput");
+        if (output) output.textContent = String(error);
+      });
+  }
+);
+
 $("refreshTextures")?.addEventListener(
   "click",
   () => {
@@ -2882,6 +3057,13 @@ loadContentUpdates().catch(
   error => {
     const result = $("contentUpdateResult");
     if (result) result.textContent = String(error);
+  }
+);
+
+loadSystemUpdateStatus().catch(
+  error => {
+    const output = $("systemUpdateOutput");
+    if (output) output.textContent = String(error);
   }
 );
 

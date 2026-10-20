@@ -27,6 +27,7 @@ from cobrinha_server.services import (
     music_runtime,
     runtime_cleanup,
     song_runtime,
+    system_updates,
     user_ai_settings,
 )
 from cobrinha_server.services.session_control import (
@@ -71,6 +72,87 @@ def _cleanup_block_reason() -> str:
         return "Aguarde o processamento da música terminar."
 
     return ""
+
+
+def _system_update_status() -> dict[str, object]:
+    status = system_updates.public_status()
+    live_active = _live_runtime_active()
+    return {
+        **status,
+        "live_active": live_active,
+        "can_install": (
+            bool(status.get("update_available"))
+            and not bool(status.get("busy"))
+            and not live_active
+        ),
+    }
+
+
+@router.get(
+    "/api/system-updates",
+    response_class=JSONResponse,
+)
+def api_system_updates_status() -> JSONResponse:
+    return JSONResponse(_system_update_status())
+
+
+@router.post(
+    "/api/system-updates/check",
+    response_class=JSONResponse,
+)
+async def api_system_updates_check() -> JSONResponse:
+    try:
+        await run_in_threadpool(
+            system_updates.synchronize,
+            install=False,
+        )
+    except system_updates.SystemUpdateBusy as exc:
+        return JSONResponse(
+            {**_system_update_status(), "ok": False, "error": str(exc)},
+            status_code=409,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {**_system_update_status(), "ok": False, "error": str(exc)},
+            status_code=502,
+        )
+    return JSONResponse(_system_update_status())
+
+
+@router.post(
+    "/api/system-updates/install",
+    response_class=JSONResponse,
+)
+async def api_system_updates_install() -> JSONResponse:
+    if _live_runtime_active():
+        return JSONResponse(
+            {
+                **_system_update_status(),
+                "ok": False,
+                "error": "Finalize a live antes de atualizar o sistema.",
+            },
+            status_code=409,
+        )
+
+    try:
+        result = await run_in_threadpool(
+            system_updates.synchronize,
+            install=True,
+        )
+        if result.get("installed"):
+            system_updates.schedule_restart()
+            result = _system_update_status()
+    except system_updates.SystemUpdateBusy as exc:
+        return JSONResponse(
+            {**_system_update_status(), "ok": False, "error": str(exc)},
+            status_code=409,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {**_system_update_status(), "ok": False, "error": str(exc)},
+            status_code=502,
+        )
+    return JSONResponse(result)
 
 
 @router.get(

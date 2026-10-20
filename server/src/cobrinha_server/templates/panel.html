@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Cobrinha Live Server</title>
-  <link rel="stylesheet" href="/static/css/panel.css?v=5">
+  <link rel="stylesheet" href="/static/css/panel.css?v=6">
 </head>
 <body>
   <main class="shell">
@@ -22,6 +22,7 @@
           Programar live
         </button>
         <button id="refresh" type="button">Atualizar</button>
+        <button id="systemUpdateTop" type="button">Atualizar sistema</button>
         <button id="openPreview" type="button">Abrir Preview</button>
         <button id="openTerrainEditor" type="button">Editar terreno</button>
         <button id="openTextureModal" type="button">Enviar textura</button>
@@ -432,6 +433,36 @@
     </section>
   </main>
 
+  <dialog id="systemUpdateModal" class="modal">
+    <form method="dialog" class="modal-card system-update-modal">
+      <header class="modal-head">
+        <div>
+          <strong>Atualização do Snake Reyers</strong>
+          <span>Baixa o pacote oficial, valida e reinicia o sistema.</span>
+        </div>
+        <button id="closeSystemUpdateModal" type="button">Fechar</button>
+      </header>
+
+      <section class="system-update-status">
+        <div class="system-update-title-line">
+          <strong id="systemUpdateTitle">Verificando versão...</strong>
+          <span id="systemUpdateBadge">Aguardando</span>
+        </div>
+        <p id="systemUpdateVersions">Versão instalada: consultando</p>
+        <p id="systemUpdateLiveNotice" class="modal-note"></p>
+      </section>
+
+      <footer class="modal-actions">
+        <button id="systemUpdateCheck" type="button">Verificar novamente</button>
+        <button id="systemUpdateInstall" class="live-toggle" type="button" disabled>
+          Baixar, instalar e reiniciar
+        </button>
+      </footer>
+
+      <pre id="systemUpdateOutput" class="system-update-output">Atualização ainda não consultada.</pre>
+    </form>
+  </dialog>
+
   <dialog id="textureModal" class="modal">
     <form method="dialog" class="modal-card">
       <header class="modal-head">
@@ -592,6 +623,6 @@
     </form>
   </dialog>
 
-  <script src="/static/js/panel.js?v=15"></script>
+  <script src="/static/js/panel.js?v=16"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@ O projeto combina um jogo 3D, personagens, comentários e presentes da live, res
 ## Instalação rápida no Windows
 
 1. Abra a página de [Releases](https://github.com/golgol2/Snake-Reyers/releases).
-2. Baixe `SnakeReyers-0.1.4-Windows-x64.zip`.
+2. Baixe `SnakeReyers-0.1.5-Windows-x64.zip`.
 3. Extraia o ZIP para uma pasta comum, como `C:\SnakeReyers`.
 4. Abra o PowerShell dentro da pasta extraída.
 5. Execute:
@@ -52,7 +52,7 @@ O Windows reproduz o áudio diretamente pelo jogo. Não é necessário usar o pi
 Requisitos: Python 3, Node.js 22 ou superior, npm, Tor, GStreamer e os plugins utilizados pela transmissão.
 
 ```bash
-tar -xzf SnakeReyers-0.1.4-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.1.5-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh launcher/start_linux.sh
 ./installer/linux/install.sh
@@ -65,7 +65,9 @@ O tutorial completo, incluindo solução de problemas, está em [docs/INSTALACAO
 
 ## Atualizações automáticas
 
-A partir da versão `0.1.1`, o launcher procura uma versão nova do programa antes de abrir o painel. O painel também possui a área **Atualizações de conteúdo**, que procura músicas e reações publicadas separadamente.
+A partir da versão `0.1.1`, o launcher procura uma versão nova do programa antes de abrir o painel. Desde a versão `0.1.5`, o botão **Atualizar sistema** também permite verificar, baixar, instalar e reiniciar o Snake Reyers sem usar comandos. A instalação fica bloqueada enquanto uma live estiver ativa.
+
+O painel também possui a área **Atualizações de conteúdo**, que procura músicas e reações publicadas separadamente.
 
 Conteúdos novos são baixados individualmente, têm o SHA-256 conferido e só são instalados com a live parada. A configuração, os áudios já instalados e os dados privados do usuário são preservados. Consulte [docs/CONTEUDO.md](docs/CONTEUDO.md) para conhecer o formato do catálogo.
 

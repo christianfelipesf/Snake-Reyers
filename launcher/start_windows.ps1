@@ -105,7 +105,9 @@ Start-Process -FilePath $PythonWindowless `
 for ($Attempt = 0; $Attempt -lt 60; $Attempt++) {
     try {
         Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:9393/api/health" | Out-Null
-        Start-Process "http://127.0.0.1:9393"
+        if ($env:SNAKE_REYERS_SKIP_BROWSER -ne "1") {
+            Start-Process "http://127.0.0.1:9393"
+        }
         exit 0
     } catch {
         Start-Sleep -Milliseconds 250

@@ -81,7 +81,7 @@ Instale previamente Python 3 com suporte a `venv`, Node.js 22+, npm, Tor, GStrea
 Depois de baixar a Release Linux:
 
 ```bash
-tar -xzf SnakeReyers-0.1.4-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.1.5-Linux-x64.tar.gz
 cd SnakeReyers
 chmod +x installer/linux/install.sh launcher/start_linux.sh
 ./installer/linux/install.sh
@@ -96,18 +96,18 @@ SNAKE_REYERS_ACCEPT_COQUI_LICENSE=1 ./installer/linux/install.sh
 
 ## Verificar os downloads
 
-Compare o SHA-256 com `SnakeReyers-0.1.4-checksums.json` publicado na Release.
+Compare o SHA-256 com `SnakeReyers-0.1.5-checksums.json` publicado na Release.
 
 Windows:
 
 ```powershell
-Get-FileHash .\SnakeReyers-0.1.4-Windows-x64.zip -Algorithm SHA256
+Get-FileHash .\SnakeReyers-0.1.5-Windows-x64.zip -Algorithm SHA256
 ```
 
 Linux:
 
 ```bash
-sha256sum SnakeReyers-0.1.4-Linux-x64.tar.gz
+sha256sum SnakeReyers-0.1.5-Linux-x64.tar.gz
 ```
 
 ## Problemas comuns

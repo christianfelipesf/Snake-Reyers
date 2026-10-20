@@ -25,7 +25,9 @@ nohup "${PYTHON}" -m uvicorn cobrinha_server.main:app \
 
 for _ in $(seq 1 40); do
 	if curl -fsS http://127.0.0.1:9393/api/health >/dev/null 2>&1; then
-		xdg-open http://127.0.0.1:9393 >/dev/null 2>&1 || true
+		if [[ "${SNAKE_REYERS_SKIP_BROWSER:-0}" != "1" ]]; then
+			xdg-open http://127.0.0.1:9393 >/dev/null 2>&1 || true
+		fi
 		exit 0
 	fi
 	sleep 0.25

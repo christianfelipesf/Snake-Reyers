@@ -1,15 +1,15 @@
 {
-  "version": "0.1.4",
-  "published_at": "2026-10-20T04:31:44Z",
+  "version": "0.1.5",
+  "published_at": "2026-10-20T04:49:47Z",
   "minimum_launcher_version": "0.1.0",
   "packages": {
     "windows-x86_64": {
-      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.4/SnakeReyers-0.1.4-Windows-x64.zip",
-      "sha256": "403c2e48b1e6a3c7de7e31bf359b8ccd428df5cac086f8e9fe0a64fde46acf5e"
+      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.5/SnakeReyers-0.1.5-Windows-x64.zip",
+      "sha256": "b496322738809d41bc73f19240f4e6c3d5b90a21e873bb1f0bba9776b16b900c"
     },
     "linux-x86_64": {
-      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.4/SnakeReyers-0.1.4-Linux-x64.tar.gz",
-      "sha256": "3789316f3fa5f36b70d08b008554c2b96960fb392303861ffbc2768e41cfe365"
+      "url": "https://github.com/golgol2/Snake-Reyers/releases/download/v0.1.5/SnakeReyers-0.1.5-Linux-x64.tar.gz",
+      "sha256": "310076d430026d6ef97a031a6d690153caa34084f12a464bb8a0b207ce9b5a8d"
     }
   }
 }
