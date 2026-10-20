@@ -16,6 +16,9 @@ $DownloadDir = Join-Path ([IO.Path]::GetTempPath()) "SnakeReyersInstaller"
 
 $PythonUrl = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe"
 $PythonSha256 = "67b5635e80ea51072b87941312d00ec8927c4db9ba18938f7ad2d27b328b95fb"
+# Copia portatil oficial (NuGet, sem MSI, sem admin, sem registro) usada como reserva.
+$PythonPortableUrl = "https://www.nuget.org/api/v2/package/python/3.12.10"
+$PythonPortableSha256 = "0eb85c2dfccccf1b17352de4c397f69194035b7d37149eacc16f1147d93de3b8"
 $NodeUrl = "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip"
 $NodeSha256 = "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71"
 $DefaultUpdateManifestUrl = "https://raw.githubusercontent.com/golgol2/Snake-Reyers/main/update-manifest.json"
@@ -122,6 +125,33 @@ function Test-Python312 {
     }
 }
 
+function Get-PythonLauncher312 {
+    $Launcher = Get-Command "py.exe" -ErrorAction SilentlyContinue
+    if (-not $Launcher) {
+        return $null
+    }
+
+    try {
+        $Listing = & $Launcher.Source -0p 2>$null
+    } catch {
+        return $null
+    }
+
+    foreach ($Line in @($Listing)) {
+        $Text = ([string]$Line).Trim()
+        if ($Text -notmatch "3\.12") {
+            continue
+        }
+        if ($Text -match "([A-Za-z]:\\[^\r\n]*?python\.exe)") {
+            $Token = $Matches[1].Trim()
+            if (Test-Path $Token -PathType Leaf) {
+                return $Token
+            }
+        }
+    }
+    return $null
+}
+
 function Find-Python312 {
     $Candidates = [System.Collections.Generic.List[string]]::new()
     $RegistryKeys = @(
@@ -143,6 +173,22 @@ function Find-Python312 {
     if ($env:ProgramFiles) {
         $Candidates.Add((Join-Path $env:ProgramFiles "Python312"))
     }
+    if (${env:ProgramFiles(x86)}) {
+        $Candidates.Add((Join-Path ${env:ProgramFiles(x86)} "Python312"))
+    }
+    $Candidates.Add("C:\Python312")
+
+    foreach ($Name in @("python.exe", "python3.exe")) {
+        $Command = Get-Command $Name -ErrorAction SilentlyContinue
+        if ($Command -and $Command.Source) {
+            $Candidates.Add((Split-Path $Command.Source -Parent))
+        }
+    }
+
+    $LauncherPython = Get-PythonLauncher312
+    if ($LauncherPython) {
+        $Candidates.Add((Split-Path $LauncherPython -Parent))
+    }
 
     foreach ($Candidate in $Candidates) {
         $Executable = Join-Path ([string]$Candidate).TrimEnd([char]'\', [char]'/') "python.exe"
@@ -151,6 +197,123 @@ function Find-Python312 {
         }
     }
     return $null
+}
+
+function Install-PortablePython {
+    $PythonExe = Join-Path $PythonRuntime "python.exe"
+    $Archive = Join-Path $DownloadDir "python-3.12.10-nuget.zip"
+    $ExtractDir = Join-Path $DownloadDir "python-nuget"
+
+    try {
+        Write-Host "Baixando a copia portatil oficial do Python 3.12 (sem instalador MSI)..."
+        Get-VerifiedDownload -Url $PythonPortableUrl -Destination $Archive -Sha256 $PythonPortableSha256
+
+        if (Test-Path $ExtractDir) {
+            Remove-Item -Recurse -Force $ExtractDir
+        }
+        Expand-Archive -Force -Path $Archive -DestinationPath $ExtractDir
+
+        $ToolsDir = Join-Path $ExtractDir "tools"
+        if (-not (Test-Path (Join-Path $ToolsDir "python.exe") -PathType Leaf)) {
+            Write-Warning "A copia portatil do Python nao trouxe o interpretador esperado."
+            return $null
+        }
+
+        if (Test-Path $PythonRuntime) {
+            Remove-Item -Recurse -Force $PythonRuntime
+        }
+        New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
+        Copy-Item -Recurse -Force -Path (Join-Path $ToolsDir "*") -Destination $PythonRuntime
+
+        if (Test-Python312 $PythonExe) {
+            return $PythonExe
+        }
+        Write-Warning "A copia portatil do Python foi extraida, mas nao executou como a versao 3.12."
+        return $null
+    } catch {
+        Write-Warning "Nao foi possivel preparar a copia portatil do Python: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Install-LocalPython {
+    $PythonExe = Join-Path $PythonRuntime "python.exe"
+    if (Test-Python312 $PythonExe) {
+        return $PythonExe
+    }
+
+    $PythonInstaller = Join-Path $DownloadDir "python-3.12.10-amd64.exe"
+    $InstallLog = Join-Path $DownloadDir "python-install.log"
+    Get-VerifiedDownload -Url $PythonUrl -Destination $PythonInstaller -Sha256 $PythonSha256
+
+    $LastExitCode = $null
+    for ($Attempt = 1; $Attempt -le 2; $Attempt++) {
+        if (Test-Path $PythonRuntime) {
+            Remove-Item -Recurse -Force $PythonRuntime -ErrorAction SilentlyContinue
+        }
+        New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
+        if (Test-Path $InstallLog) {
+            Remove-Item -Force $InstallLog -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "Preparando o Python 3.12 local (tentativa $Attempt de 2)..."
+        try {
+            $PythonInstall = Start-Process -Wait -PassThru -FilePath $PythonInstaller -ArgumentList @(
+                "/quiet",
+                "/log `"$InstallLog`"",
+                "InstallAllUsers=0",
+                "Include_launcher=0",
+                "Include_test=0",
+                "Include_doc=0",
+                "Include_tcltk=0",
+                "Include_pip=1",
+                "PrependPath=0",
+                "TargetDir=`"$PythonRuntime`""
+            )
+            $LastExitCode = $PythonInstall.ExitCode
+        } catch {
+            $LastExitCode = $null
+            Write-Warning "O instalador oficial do Python falhou: $($_.Exception.Message)"
+        }
+
+        if (Test-Python312 $PythonExe) {
+            return $PythonExe
+        }
+    }
+
+    $FallbackPython = Find-Python312
+    if ($FallbackPython) {
+        $FallbackRoot = Split-Path $FallbackPython -Parent
+        Write-Warning "O instalador oficial nao criou a copia local do Python 3.12."
+        Write-Host "Reaproveitando o Python 3.12 encontrado em: $FallbackRoot"
+        $SameLocation = (
+            [IO.Path]::GetFullPath($FallbackRoot).TrimEnd('\') -eq
+            [IO.Path]::GetFullPath($PythonRuntime).TrimEnd('\')
+        )
+        if (-not $SameLocation) {
+            if (Test-Path $PythonRuntime) {
+                Remove-Item -Recurse -Force $PythonRuntime -ErrorAction SilentlyContinue
+            }
+            New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
+            Copy-Item -Recurse -Force -Path (Join-Path $FallbackRoot "*") -Destination $PythonRuntime
+        }
+        if (Test-Python312 $PythonExe) {
+            return $PythonExe
+        }
+    }
+
+    $PortablePython = Install-PortablePython
+    if ($PortablePython) {
+        Write-Host "Python 3.12 portatil pronto em: $PythonRuntime"
+        return $PortablePython
+    }
+
+    $Detail = if ($null -ne $LastExitCode) {
+        " O instalador do Python retornou o codigo $LastExitCode; o log esta em $InstallLog."
+    } else {
+        ""
+    }
+    throw "Nao foi possivel preparar o Python 3.12 local.$Detail Instale o Python 3.12 do python.org (marcando 'Add python.exe to PATH') e execute novamente."
 }
 
 function Repair-DistributionPayload {
@@ -249,10 +412,17 @@ function Repair-DistributionPayload {
 function Invoke-PipInstall {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
 
-    & $Python -m pip install --disable-pip-version-check @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Falha ao instalar dependencias Python: $($Arguments -join ' ')"
+    for ($Attempt = 1; $Attempt -le 2; $Attempt++) {
+        & $Python -m pip install --disable-pip-version-check --no-input --retries 5 --timeout 60 @Arguments
+        if ($LASTEXITCODE -eq 0) {
+            return
+        }
+        if ($Attempt -lt 2) {
+            Write-Warning "Falha ao instalar dependencias Python. Tentando novamente..."
+            Start-Sleep -Seconds 5
+        }
     }
+    throw "Falha ao instalar dependencias Python: $($Arguments -join ' ')"
 }
 
 function Install-AudioPackages {
@@ -312,6 +482,9 @@ function Install-AudioPackages {
 }
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+if (-not [Environment]::Is64BitOperatingSystem) {
+    throw "O Snake Reyers Lite precisa de um Windows de 64 bits (x64)."
+}
 New-Item -ItemType Directory -Force -Path $RuntimeDir, $DownloadDir | Out-Null
 
 $env:COBRINHA_SERVER_DIR = $ServerDir
@@ -323,48 +496,7 @@ if ($RepairDistributionOnly) {
     exit 0
 }
 
-$PythonExe = Join-Path $PythonRuntime "python.exe"
-if (-not (Test-Path $PythonExe)) {
-    $PythonInstaller = Join-Path $DownloadDir "python-3.12.10-amd64.exe"
-    Get-VerifiedDownload -Url $PythonUrl -Destination $PythonInstaller -Sha256 $PythonSha256
-    New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
-    $PythonInstall = Start-Process -Wait -PassThru -FilePath $PythonInstaller -ArgumentList @(
-        "/quiet",
-        "InstallAllUsers=0",
-        "Include_launcher=0",
-        "Include_test=0",
-        "Include_doc=0",
-        "Include_tcltk=0",
-        "Include_pip=1",
-        "PrependPath=0",
-        "TargetDir=`"$PythonRuntime`""
-    )
-    if (
-        $PythonInstall.ExitCode -ne 0 -or
-        -not (Test-Path $PythonExe)
-    ) {
-        $FallbackPython = Find-Python312
-        if ($FallbackPython) {
-            $FallbackRoot = Split-Path $FallbackPython -Parent
-            Write-Warning "O instalador oficial pulou o Python (ja existe uma instalacao 3.12 registrada no Windows)."
-            Write-Host "Reaproveitando o Python 3.12 encontrado em: $FallbackRoot"
-            $SameLocation = (
-                [IO.Path]::GetFullPath($FallbackRoot).TrimEnd('\') -eq
-                [IO.Path]::GetFullPath($PythonRuntime).TrimEnd('\')
-            )
-            if (-not $SameLocation) {
-                if (Test-Path $PythonRuntime) {
-                    Remove-Item -Recurse -Force $PythonRuntime
-                }
-                New-Item -ItemType Directory -Force -Path $PythonRuntime | Out-Null
-                Copy-Item -Recurse -Force -Path (Join-Path $FallbackRoot "*") -Destination $PythonRuntime
-            }
-        }
-    }
-    if (-not (Test-Path $PythonExe)) {
-        throw "Nao foi possivel preparar o Python 3.12 local. Instale o Python 3.12 (com venv) e execute novamente."
-    }
-}
+$PythonExe = Install-LocalPython
 
 $NodeExe = Join-Path $NodeRuntime "node.exe"
 if (-not (Test-Path $NodeExe)) {
@@ -386,6 +518,10 @@ if (-not (Test-Path $NodeExe)) {
     Copy-Item -Recurse -Force -Path (Join-Path $NodeSource.FullName "*") -Destination $NodeRuntime
 }
 
+if (-not (Test-Path $NodeExe)) {
+    throw "Nao foi possivel preparar o Node.js local."
+}
+
 $NodeMajor = [int](& $NodeExe -p "Number(process.versions.node.split('.')[0])")
 if ($NodeMajor -lt 22) {
     throw "O Node.js local precisa ser versao 22 ou superior."
@@ -395,6 +531,9 @@ $VenvDir = Join-Path $ServerDir ".venv"
 $Python = Join-Path $VenvDir "Scripts\python.exe"
 if (-not (Test-Path $Python)) {
     & $PythonExe -m venv $VenvDir
+    if (-not (Test-Path $Python)) {
+        throw "Nao foi possivel criar o ambiente Python local (.venv)."
+    }
 }
 
 Invoke-PipInstall -Arguments @("--upgrade", "pip")
@@ -404,8 +543,19 @@ Write-Host "Instalando a voz local leve (Piper)..."
 Invoke-PipInstall -Arguments @("-r", (Join-Path $ServerDir "requirements-voice.txt"))
 
 if (-not $SkipTtsModel) {
-    & $Python (Join-Path $ServerDir "scripts\prepare_tts_voice.py")
-    if ($LASTEXITCODE -ne 0) {
+    $VoicePrepared = $false
+    for ($Attempt = 1; $Attempt -le 2; $Attempt++) {
+        & $Python (Join-Path $ServerDir "scripts\prepare_tts_voice.py")
+        if ($LASTEXITCODE -eq 0) {
+            $VoicePrepared = $true
+            break
+        }
+        if ($Attempt -lt 2) {
+            Write-Warning "Falha ao preparar as vozes do Piper. Tentando novamente..."
+            Start-Sleep -Seconds 5
+        }
+    }
+    if (-not $VoicePrepared) {
         throw "Nao foi possivel preparar as vozes do Piper."
     }
 }
@@ -416,8 +566,19 @@ $env:PATH = "$NodeRuntime;$env:PATH"
 $Npm = Join-Path $NodeRuntime "npm.cmd"
 Push-Location $MonitorDir
 try {
-    & $Npm ci --omit=dev
-    if ($LASTEXITCODE -ne 0) {
+    $MonitorInstalled = $false
+    for ($Attempt = 1; $Attempt -le 2; $Attempt++) {
+        & $Npm ci --omit=dev
+        if ($LASTEXITCODE -eq 0) {
+            $MonitorInstalled = $true
+            break
+        }
+        if ($Attempt -lt 2) {
+            Write-Warning "Falha ao instalar as dependencias do monitor TikTok. Tentando novamente..."
+            Start-Sleep -Seconds 5
+        }
+    }
+    if (-not $MonitorInstalled) {
         throw "Falha ao instalar as dependencias do monitor TikTok."
     }
 } finally {
