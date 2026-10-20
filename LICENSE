@@ -1,0 +1,87 @@
+LICENÇA SNAKE REYERS DE USO GRATUITO PARA LIVES NO TIKTOK
+Versão 1.0 - 19 de outubro de 2026
+
+Copyright (c) 2026 Thiago Reyes. Todos os direitos reservados.
+
+Esta licença aplica-se ao software Snake Reyers, incluindo o jogo compilado,
+o servidor, o monitor, o painel, os instaladores, a documentação e os ativos
+distribuídos com o projeto (em conjunto, o "Software"), exceto componentes de
+terceiros sujeitos às suas próprias licenças.
+
+1. CONCESSÃO DE USO
+
+O titular concede a você uma licença pessoal, gratuita, não exclusiva,
+não transferível e revogável para:
+
+a) baixar, instalar e executar o Software;
+b) estudar o código disponibilizado neste repositório;
+c) modificar o código disponibilizado somente para uso próprio; e
+d) usar o Software na criação e operação de suas próprias transmissões ao vivo
+   no TikTok.
+
+2. EXCEÇÃO EXPRESSA PARA MONETIZAÇÃO NO TIKTOK
+
+Você pode monetizar suas próprias transmissões ao vivo realizadas no TikTok
+com o Software. Essa permissão inclui presentes, inscrições, recompensas,
+anúncios e outros recursos oficiais de monetização disponibilizados pelo
+TikTok ao criador da live.
+
+Essa é a única exploração comercial autorizada por esta licença. A receita
+obtida pela própria live no TikTok não transforma o uso permitido em uma
+violação da restrição não comercial.
+
+3. USOS PROIBIDOS
+
+Sem autorização prévia e escrita do titular, você não pode:
+
+a) vender, revender, alugar, sublicenciar ou cobrar pelo Software;
+b) cobrar pelo acesso ao Software, ao jogo, ao painel ou a cópias modificadas;
+c) oferecer o Software como serviço pago, hospedado, gerenciado ou de marca
+   branca;
+d) incluir o Software em produto, assinatura, curso, pacote ou serviço pago;
+e) distribuir, republicar ou disponibilizar executáveis, pacotes de áudio ou
+   versões modificadas fora dos canais oficiais do projeto;
+f) usar o Software para monetização em outras plataformas ou para qualquer
+   finalidade comercial diferente da exceção prevista na seção 2;
+g) remover avisos de autoria, direitos autorais ou esta licença;
+h) afirmar que o Software é de sua autoria ou usar o nome e a identidade Snake
+   Reyers como marca própria; ou
+i) tentar obter, publicar ou redistribuir o projeto-fonte não disponibilizado
+   do jogo Godot.
+
+Links para este repositório e forks públicos destinados exclusivamente a
+estudo ou contribuição são permitidos, desde que esta licença seja preservada
+e que nenhum pacote, executável ou serviço seja comercializado.
+
+4. CÓDIGO VISÍVEL NÃO É CÓDIGO ABERTO
+
+O código disponibilizado é "source available" sob estes termos. Esta não é uma
+licença de código aberto, pois restringe usos comerciais e campos de uso.
+
+5. COMPONENTES DE TERCEIROS
+
+Bibliotecas, mecanismos, modelos, músicas, fontes e demais componentes de
+terceiros permanecem sujeitos às respectivas licenças e termos. Esta licença
+não concede direitos que o titular não possua e não substitui os termos do
+TikTok, OpenAI, Coqui, Godot, Streamlabs ou de qualquer outro serviço.
+
+6. AUSÊNCIA DE GARANTIA
+
+O Software é fornecido "NO ESTADO EM QUE SE ENCONTRA", sem garantias expressas
+ou implícitas. Na extensão permitida pela legislação aplicável, o titular não
+será responsável por perdas, interrupções, bloqueios de conta, perda de receita,
+danos ou outras consequências decorrentes do uso do Software.
+
+7. ENCERRAMENTO
+
+Qualquer violação encerra automaticamente esta licença. Após o encerramento,
+você deverá cessar o uso e excluir as cópias do Software sob seu controle. As
+restrições de propriedade, responsabilidade e uso comercial permanecem válidas.
+
+8. ACEITAÇÃO
+
+Ao baixar, instalar, copiar, modificar ou executar o Software, você declara que
+leu e aceitou estes termos. Caso não concorde, não use o Software.
+
+Para uma autorização não prevista nesta licença, entre em contato com o titular
+pelos canais oficiais indicados no repositório Snake Reyers.

@@ -4,7 +4,7 @@ Olá! Meu nome é **Thiago Reyes** e este é o **Snake Reyers**, um sistema grat
 
 O projeto combina um jogo 3D, personagens, comentários e presentes da live, respostas com inteligência artificial, geração local de voz e um painel de controle no navegador. Minha intenção é permitir que outras pessoas também criem sua própria live interativa sem precisar montar toda a estrutura do zero.
 
-> O jogo é distribuído compilado. O código do servidor, do monitor, do painel e dos instaladores está disponível neste repositório, mas o projeto-fonte do Godot não faz parte da distribuição.
+> O jogo é distribuído compilado. O código do servidor, do monitor, do painel e dos instaladores está disponível para consulta neste repositório, mas o projeto-fonte do Godot não faz parte da distribuição.
 
 ## O que está incluído
 
@@ -84,6 +84,14 @@ Entre no grupo para trocar ideias, relatar problemas e acompanhar o desenvolvime
 ## Atualizações
 
 As novas versões serão publicadas nas [Releases](https://github.com/golgol2/Snake-Reyers/releases). Cada pacote possui um hash SHA-256 para conferência de integridade.
+
+## Licença
+
+O Snake Reyers é gratuito para uso nas suas próprias lives do TikTok. Você pode monetizar essas lives pelos recursos oficiais da plataforma, incluindo presentes, inscrições, recompensas e anúncios.
+
+É proibido vender, revender, alugar, sublicenciar, oferecer como serviço pago, distribuir cópias não oficiais ou explorar comercialmente o Software fora da monetização da própria live no TikTok.
+
+Este projeto é **source available**, não código aberto. Ao baixar, instalar ou usar o sistema, você aceita a [Licença Snake Reyers de Uso Gratuito para Lives no TikTok](LICENSE).
 
 ## Aviso
 

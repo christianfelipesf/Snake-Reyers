@@ -2,6 +2,8 @@
 
 Este guia instala o Snake Reyers sem exigir o projeto-fonte do Godot. O jogo já vem compilado no pacote da plataforma.
 
+Ao baixar, instalar ou executar o sistema, o usuário aceita a [Licença Snake Reyers](../LICENSE). O uso é gratuito, e a monetização é permitida exclusivamente nas próprias lives do usuário no TikTok. A venda, revenda, locação, sublicença e oferta do sistema como serviço pago são proibidas.
+
 ## Windows 10 e 11
 
 ### 1. Baixar
