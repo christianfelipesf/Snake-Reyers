@@ -117,6 +117,11 @@ else
 fi
 
 chmod +x "${ROOT_DIR}/game/linux/SnakeReyers.x86_64" 2>/dev/null || true
+chmod +x "${ROOT_DIR}/launcher/create_shortcut_linux.sh" 2>/dev/null || true
 mkdir -p "${SERVER_DIR}/private" "${SERVER_DIR}/runs/logs"
 
-echo "Snake Reyers instalado com TTS, vozes e musicas. Execute launcher/start_linux.sh"
+if ! "${ROOT_DIR}/launcher/create_shortcut_linux.sh"; then
+	echo "Aviso: nao foi possivel criar o atalho na Area de Trabalho." >&2
+fi
+
+echo "Snake Reyers instalado com TTS, vozes e musicas. Use o atalho da Area de Trabalho para iniciar."

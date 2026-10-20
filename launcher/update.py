@@ -8,6 +8,7 @@ import os
 import platform
 import shutil
 import stat
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -190,6 +191,47 @@ def _install_payload(payload_root: Path) -> int:
     return copied
 
 
+def _run_post_install() -> str:
+    system = platform.system().lower()
+    if system == "windows":
+        script = ROOT_DIR / "launcher" / "create_shortcut.ps1"
+        if not script.is_file():
+            return ""
+        command = [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script),
+            "-InstallRoot",
+            str(ROOT_DIR),
+        ]
+    elif system == "linux":
+        script = ROOT_DIR / "launcher" / "create_shortcut_linux.sh"
+        if not script.is_file():
+            return ""
+        script.chmod(script.stat().st_mode | stat.S_IXUSR)
+        command = ["bash", str(script)]
+    else:
+        return ""
+
+    completed = subprocess.run(
+        command,
+        cwd=str(ROOT_DIR),
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip()
+        raise RuntimeError(
+            detail or "Nao foi possivel criar o atalho de inicializacao."
+        )
+    return completed.stdout.strip()
+
+
 def check_and_update(manifest_url: str, install: bool) -> dict[str, Any]:
     manifest = _load_manifest(manifest_url)
     current = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.is_file() else "0.0.0"
@@ -221,6 +263,10 @@ def check_and_update(manifest_url: str, install: bool) -> dict[str, Any]:
             raise ValueError("A versao do pacote difere do manifesto.")
         result["files_updated"] = _install_payload(payload)
         result["installed"] = True
+        try:
+            result["post_install"] = _run_post_install()
+        except Exception as exc:
+            result["post_install_warning"] = str(exc)
     return result
 
 

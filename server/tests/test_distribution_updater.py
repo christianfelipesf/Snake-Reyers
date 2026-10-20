@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -65,3 +66,29 @@ def test_default_update_manifest_is_configured(monkeypatch, tmp_path):
     monkeypatch.setattr(updater, "PRIVATE_CONFIG_FILE", tmp_path / "missing.json")
 
     assert updater._manifest_url() == updater.DEFAULT_MANIFEST_URL
+
+
+def test_post_install_creates_windows_shortcut(monkeypatch, tmp_path):
+    updater = _load_updater()
+    root = tmp_path / "install"
+    script = root / "launcher" / "create_shortcut.ps1"
+    script.parent.mkdir(parents=True)
+    script.write_text("# test\n", encoding="utf-8")
+    captured = {}
+
+    monkeypatch.setattr(updater, "ROOT_DIR", root)
+    monkeypatch.setattr(updater.platform, "system", lambda: "Windows")
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured["kwargs"] = kwargs
+        return subprocess.CompletedProcess(command, 0, "atalho criado", "")
+
+    monkeypatch.setattr(updater.subprocess, "run", fake_run)
+
+    result = updater._run_post_install()
+
+    assert result == "atalho criado"
+    assert "powershell.exe" in captured["command"]
+    assert str(script) in captured["command"]
+    assert str(root) in captured["command"]

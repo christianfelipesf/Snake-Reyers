@@ -39,11 +39,9 @@ Quando a licença Coqui Public Model License aparecer, leia os termos e responda
 
 ### 4. Iniciar
 
-No mesmo terminal:
+Ao concluir, abra o atalho **Snake Reyers** criado na Área de Trabalho. Ele inicia o servidor sem deixar uma janela do PowerShell aberta e abre o painel automaticamente.
 
-```powershell
-.\launcher\start_windows.ps1
-```
+Se o atalho for removido, execute `launcher\create_shortcut.ps1` para criá-lo novamente.
 
 O navegador abrirá o painel. Se isso não acontecer, acesse manualmente:
 
@@ -81,12 +79,13 @@ Instale previamente Python 3 com suporte a `venv`, Node.js 22+, npm, Tor, GStrea
 Depois de baixar a Release Linux:
 
 ```bash
-tar -xzf SnakeReyers-0.1.5-Linux-x64.tar.gz
+tar -xzf SnakeReyers-0.1.6-Linux-x64.tar.gz
 cd SnakeReyers
-chmod +x installer/linux/install.sh launcher/start_linux.sh
+chmod +x installer/linux/install.sh
 ./installer/linux/install.sh
-./launcher/start_linux.sh
 ```
+
+Depois da instalação, abra o atalho **Snake Reyers** criado na Área de Trabalho.
 
 Para uma instalação automatizada, a aceitação da licença Coqui pode ser informada explicitamente:
 
@@ -96,18 +95,18 @@ SNAKE_REYERS_ACCEPT_COQUI_LICENSE=1 ./installer/linux/install.sh
 
 ## Verificar os downloads
 
-Compare o SHA-256 com `SnakeReyers-0.1.5-checksums.json` publicado na Release.
+Compare o SHA-256 com `SnakeReyers-0.1.6-checksums.json` publicado na Release.
 
 Windows:
 
 ```powershell
-Get-FileHash .\SnakeReyers-0.1.5-Windows-x64.zip -Algorithm SHA256
+Get-FileHash .\SnakeReyers-0.1.6-Windows-x64.zip -Algorithm SHA256
 ```
 
 Linux:
 
 ```bash
-sha256sum SnakeReyers-0.1.5-Linux-x64.tar.gz
+sha256sum SnakeReyers-0.1.6-Linux-x64.tar.gz
 ```
 
 ## Problemas comuns

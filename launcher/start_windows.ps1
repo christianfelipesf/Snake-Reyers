@@ -11,6 +11,15 @@ $TorDataDir = Join-Path $ServerDir "private\tor-data"
 $TorGeoIp = Join-Path $RuntimeDir "tor\data\geoip"
 $TorGeoIpv6 = Join-Path $RuntimeDir "tor\data\geoip6"
 $LogDir = Join-Path $ServerDir "runs\logs"
+$ShortcutInstaller = Join-Path $RootDir "launcher\create_shortcut.ps1"
+
+if (Test-Path $ShortcutInstaller -PathType Leaf) {
+    try {
+        & $ShortcutInstaller -InstallRoot $RootDir | Out-Null
+    } catch {
+        Write-Warning "Nao foi possivel reparar o atalho: $($_.Exception.Message)"
+    }
+}
 
 function Test-LocalPort {
     param([int]$Port)
@@ -69,6 +78,18 @@ $env:PYTHONPATH = Join-Path $ServerDir "src"
 $env:TTS_HOME = Join-Path $RuntimeDir "tts"
 $env:COBRINHA_TOR_SOCKS_HOST = "127.0.0.1"
 $env:COBRINHA_TOR_SOCKS_PORT = "9050"
+
+if (Test-LocalPort -Port 9393) {
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:9393/api/health" -TimeoutSec 2 | Out-Null
+        if ($env:SNAKE_REYERS_SKIP_BROWSER -ne "1") {
+            Start-Process "http://127.0.0.1:9393"
+        }
+        exit 0
+    } catch {
+        throw "A porta 9393 esta ocupada por outro programa."
+    }
+}
 
 if (-not (Test-LocalPort -Port 9050)) {
     Start-Process -FilePath $TorExe -WindowStyle Hidden -ArgumentList @(

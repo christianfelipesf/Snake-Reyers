@@ -362,5 +362,12 @@ if (Test-Path $DownloadDir) {
     Remove-Item -Recurse -Force $DownloadDir
 }
 
+$ShortcutInstaller = Join-Path $RootDir "launcher\create_shortcut.ps1"
+try {
+    & $ShortcutInstaller -InstallRoot $RootDir
+} catch {
+    Write-Warning "Nao foi possivel criar o atalho: $($_.Exception.Message)"
+}
+
 Write-Host "Snake Reyers instalado com TTS, vozes, musicas, Python, Node.js e Tor locais."
-Write-Host "Execute launcher\start_windows.ps1"
+Write-Host "Use o atalho Snake Reyers na Area de Trabalho para iniciar."
